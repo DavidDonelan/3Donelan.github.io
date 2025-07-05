@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Make sure the page scales correctly on mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prism Mobile</title>
+
+    <style>
+/*TO DO
+-check the code claudecame up with and incorporate animations
+-perhaps try other AI
+-slider for the parameter container
+-overall another pallet
+-get domain
+
+*/
+        /* Base styles for the page */
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            background: #ffffff;
+            height: 100vh;
+            overflow-x: hidden; /* Prevent horizontal scroll on mobile */
+        }
+
+        /* Optional wrapper (currently unused but reserved for layout) */
+        .app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Top bar/header area */
+        #topbar {
+            width: 100%;
+            height: 7vh;
+            background: #1d3557; /* Deep blue */
+            display: flex;
+            justify-content: flex-end; /* Button pushed to right */
+            align-items: center;
+            padding: 0 16px;
+            box-sizing: border-box;
+        }
+
+        /* Title label inside topbar */
+        .topbar-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f1faee;      /* Soft white */
+            flex-grow: 1;        /* Takes all space except the button */
+            padding-left: 16px;
+        }
+
+        /* Round icon button (download) in topbar */
+        .top-button {
+            width: 32px;
+            height: 32px;
+            background: #a8d4dc; /* Soft blue */
+            border: none;
+            cursor: pointer;
+            font-size: 28px;
+            line-height: 32px;
+            color: #1d3557;      /* Deep blue icon color */
+            text-align: center;
+            border-radius: 50%;  /* Circle shape */
+        }
+
+        /* Main viewport for 3D model */
+        #viewPort {
+            width: 100vw;
+            height: 63vh;
+            background: #f1faee; /* Very light green/gray */
+        }
+
+        /* Container for control sliders */
+        #controls {
+            width: 100%;
+            height: 30vh;
+            padding: 20px;
+            background: #457b9d;  /* Muted navy/blue */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;  /* Space between controls */
+        }
+
+        /* Style for each control label (e.g., Length, Width) */
+        .paramateParamName {
+            display: block;
+            text-align: center;
+            margin-bottom: 4px;
+            font-weight: bold;
+            color: #f1faee; /* Same soft white as topbar */
+        }
+
+        /* Style for all sliders */
+        #controls input[type="range"] {
+            width: 250px;
+            height: 6px;
+            appearance: none;
+            background: #a8dadc;  /* Soft blue-gray for track */
+            border-radius: 5px;
+            outline: none;
+            margin-top: 4px;
+        }
+
+        /* Slider thumb styling for WebKit browsers */
+        #controls input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 18px;
+            border-radius: 20%;
+            background: #1d3557; /* Matches topbar color */
+            cursor: pointer;
+            box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+            margin-top: -6px; /* Align thumb with track */
+        }
+
+        /* Uncomment for Firefox thumb styling if needed */
+
+        #controls input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #9e1b1b;
+            cursor: pointer;
+        }
+
+
+        /* Center layout and constrain width on larger screens */
+        @media (min-width: 768px) {
+            #viewPort,
+            #controls {
+                max-width: 100vw;
+                margin: 0 auto;
+            }
+        }
+    </style>
+
+    <!-- Load Paramate library scripts -->
+    <script src="https://libs.paramate.trinckle.com/paramateConfigurator-latest.js"></script>
+    <script src="https://libs.paramate.trinckle.com/paramateControlsAuto-latest.js"></script>
+    <script src="https://libs.paramate.trinckle.com/paramateViewportWebGL-latest.js"></script>
+</head>
+
+<body>
+    <!-- Header bar with title and download button -->
+    <div id="topbar">
+        <span class="topbar-title">Prism Configurator</span>
+        <button class="top-button" onclick="downloadSTL()">⬇</button>
+    </div>
+
+    <!-- Viewport for 3D model -->
+    <div id="viewPort"></div>
+
+    <!-- Paramate-generated sliders go here -->
+    <div id="controls"></div>
+
+    <script>
+        // Download STL file using configurator’s export function
+        function downloadSTL() {
+            let filename = 'Prism.stl';
+            var a = document.createElement('a');
+            a.href = configurator.getFinalizedModelUrl('stl', filename);
+            document.body.appendChild(a);
+            a.click();
+        }
+
+        // Declare variables for Paramate components
+        var configurator;
+        var viewPort;
+        var controls;
+
+        // Initialize everything on page load
+        window.onload = function () {
+            // Set up Paramate configuration engine
+            configurator = new Paramate.Configurator({
+                APIHub: 'https://api.paramate.trinckle.com',
+                configuratorId: 'bdd29053-5a98-42bb-b299-78ce5e33a406',
+                APIKey: 'a034021e936919de42cde9b20cfe6741'
+            });
+
+            // Set up 3D WebGL viewport
+            viewPort = new Paramate.ViewportWebGL({
+                configurator: configurator,
+                viewportElement: document.getElementById('viewPort')
+            });
+
+            // Auto-generate sliders and UI controls
+            controls = new Paramate.ControlsAuto({
+                configurator: configurator,
+                containerElement: document.getElementById('controls')
+            });
+
+            // Link everything together
+            configurator.viewPort = viewPort;
+            configurator.controls = controls;
+
+            // Start Paramate rendering and control logic
+            configurator.initialize();
+        }
+    </script>
+</body>
+</html>
