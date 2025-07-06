@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Meta configuration for proper scaling and character encoding -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Prism Configurator v2</title>
 
   <style>
-    /* Global and reset styles */
     html, body {
       margin: 0;
       padding: 0;
@@ -17,7 +15,6 @@
       overflow-x: hidden;
     }
 
-    /* Top bar with title and STL download button */
     #topbar {
       width: 100%;
       height: 64px;
@@ -63,7 +60,6 @@
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     }
 
-    /* 3D Viewport area */
     #viewPort {
       width: 100vw;
       height: calc(100vh - 64px - 280px);
@@ -73,7 +69,6 @@
       border-radius: 0;
     }
 
-    /* Controls section containing slider buttons and ranges */
     #slider-section {
       width: 100%;
       height: 280px;
@@ -113,15 +108,18 @@
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
 
+    .variable-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      background: rgba(255, 255, 255, 0.2);
+    }
+
     .variable-btn.active {
       background: rgba(255, 255, 255, 0.9);
       color: #6366f1;
       border-color: rgba(255, 255, 255, 0.8);
-    }
-
-    /* Hide non-active slider containers */
-    .slider-container.hidden {
-      display: none;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
     }
 
     .slider-container {
@@ -132,15 +130,23 @@
       padding: 0 16px;
     }
 
-    /* Slider track and thumb */
+    .slider-container.hidden {
+      display: none;
+    }
+
     .slider-container input[type="range"] {
       width: 100%;
       height: 8px;
       border-radius: 4px;
       appearance: none;
-      background: linear-gradient(to right, #6366f1 0%, #6366f1 var(--slider-progress, 0%), rgba(255,255,255,0.3) var(--slider-progress, 0%), rgba(255,255,255,0.3) 100%);
+      background: linear-gradient(to right, #6366f1 0%, #6366f1 var(--slider-progress, 0%), rgba(255, 255, 255, 0.3) var(--slider-progress, 0%), rgba(255, 255, 255, 0.3) 100%);
       cursor: pointer;
       outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .slider-container input[type="range"]:hover {
+      transform: scaleY(1.2);
     }
 
     .slider-container input[type="range"]::-webkit-slider-thumb {
@@ -150,6 +156,13 @@
       border-radius: 50%;
       background: linear-gradient(135deg, #6366f1, #8b5cf6);
       cursor: pointer;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .slider-container input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
     }
 
     .slider-container input[type="range"]::-moz-range-thumb {
@@ -159,9 +172,9 @@
       background: linear-gradient(135deg, #6366f1, #8b5cf6);
       cursor: pointer;
       border: none;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
     }
 
-    /* Display current value */
     .display {
       padding: 16px 32px;
       border: 2px solid rgba(255, 255, 255, 0.3);
@@ -171,27 +184,126 @@
       font-size: 18px;
       font-weight: 600;
       color: #ffffff;
+      min-width: 120px;
       text-align: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      letter-spacing: 0.5px;
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+      #topbar {
+        height: 56px;
+        padding: 0 16px;
+      }
+
+      .topbar-title {
+        font-size: 18px;
+      }
+
+      .top-button {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+        border-radius: 10px;
+      }
+
+      #viewPort {
+        height: calc(100vh - 56px - 320px);
+      }
+
+      #slider-section {
+        height: 320px;
+        padding: 24px 16px;
+        gap: 20px;
+      }
+
+      .variable-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 16px;
+        border-radius: 12px;
+      }
+
+      .buttons {
+        gap: 12px;
+      }
+
+      .slider-container {
+        max-width: 300px;
+        padding: 0 8px;
+      }
+
+      .display {
+        padding: 12px 24px;
+        font-size: 16px;
+        min-width: 100px;
+        border-radius: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #topbar {
+        padding: 0 12px;
+      }
+
+      .topbar-title {
+        font-size: 16px;
+      }
+
+      #slider-section {
+        padding: 20px 12px;
+      }
+
+      .variable-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 14px;
+      }
+
+      .slider-container {
+        max-width: 250px;
+      }
+
+      .display {
+        padding: 10px 20px;
+        font-size: 14px;
+      }
+    }
+
+    /* Landscape orientation adjustments */
+    @media (max-height: 600px) and (orientation: landscape) {
+      #slider-section {
+        height: 200px;
+        padding: 16px;
+        gap: 16px;
+      }
+
+      .variable-btn {
+        width: 48px;
+        height: 48px;
+      }
+
+      .display {
+        padding: 12px 24px;
+        font-size: 16px;
+      }
     }
   </style>
 
-  <!-- Include trinckle paramate libraries -->
   <script src="https://libs.paramate.trinckle.com/paramateConfigurator-latest.js"></script>
   <script src="https://libs.paramate.trinckle.com/paramateControls-latest.js"></script>
   <script src="https://libs.paramate.trinckle.com/paramateViewportWebGL-latest.js"></script>
 </head>
 
 <body>
-  <!-- Top bar with title and STL export button -->
   <div id="topbar">
     <span class="topbar-title">Prism Configurator</span>
     <button class="top-button" onclick="downloadSTL()">⬇</button>
   </div>
 
-  <!-- WebGL 3D viewport -->
   <div id="viewPort"></div>
 
-  <!-- Controls section with buttons, sliders and display -->
   <div id="slider-section">
     <div class="buttons">
       <button class="variable-btn active" data-target="length">L</button>
@@ -217,7 +329,6 @@
   </div>
 
   <script>
-    // Initialize configurator and connect to trinckle API
     let configurator, viewPort, controls;
 
     window.onload = function () {
@@ -238,7 +349,6 @@
       configurator.controls = controls;
       configurator.initialize();
 
-      // Set up UI button listeners
       const buttons = document.querySelectorAll(".variable-btn");
       const sliderContainers = document.querySelectorAll(".slider-container");
       const display = document.getElementById("display");
@@ -259,12 +369,13 @@
         });
       });
 
-      // Initialize progress bar on page load
+      // Initialize slider visual on page load
       const activeSlider = document.querySelector('.slider-container:not(.hidden) input');
-      if (activeSlider) updateSliderVisual(activeSlider);
+      if (activeSlider) {
+        updateSliderVisual(activeSlider);
+      }
     };
 
-    // STL download function
     function downloadSTL() {
       const a = document.createElement("a");
       a.href = configurator.getFinalizedModelUrl("stl", "Prism.stl");
@@ -272,7 +383,6 @@
       a.click();
     }
 
-    // Slider change handlers
     function setLength(input) {
       configurator.setParamValue("main:length", input.value, true);
       updateDisplay(input.value);
@@ -297,7 +407,6 @@
       updateSliderVisual(input);
     }
 
-    // Display value in mm or raw (for points)
     function updateDisplay(val) {
       const activeBtn = document.querySelector('.variable-btn.active');
       const target = activeBtn ? activeBtn.dataset.target : '';
@@ -305,7 +414,6 @@
       document.getElementById("display").textContent = `${val}${unit}`;
     }
 
-    // Visual progress bar effect
     function updateSliderVisual(slider) {
       const min = parseFloat(slider.min) || 0;
       const max = parseFloat(slider.max) || 100;
