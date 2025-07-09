@@ -313,16 +313,16 @@
     </div>
 
     <div class="slider-container" id="length-container">
-      <input type="range" min="7" max="69" value="42" class="slider" oninput="setLength(this)" />
+      <input type="range" min="7" max="69" value="42" class="slider" onchange="setLength(this)" oninput="updateOnSliderInput(this)" />
     </div>
     <div class="slider-container hidden" id="width-container">
-      <input type="range" min="7" max="69" value="42" class="slider" oninput="setWidth(this)" />
+      <input type="range" min="7" max="69" value="42" class="slider" onchange="setWidth(this)" oninput="updateOnSliderInput(this)"/>
     </div>
     <div class="slider-container hidden" id="height-container">
-      <input type="range" min="7" max="255" value="42" class="slider" oninput="setHeight(this)" />
+      <input type="range" min="7" max="255" value="42" class="slider" onchange="setHeight(this)" oninput="updateOnSliderInput(this)"/>
     </div>
     <div class="slider-container hidden" id="points-container">
-      <input type="range" min="3" max="10" value="4" class="slider" oninput="setPoints(this)" />
+      <input type="range" min="3" max="10" value="4" class="slider" onchange="setPoints(this)" oninput="updateOnSliderInput(this)"/>
     </div>
 
     <div class="display" id="display">42 mm</div>
@@ -383,28 +383,25 @@
       a.click();
     }
 
-    function setLength(input) {
-      configurator.setParamValue("main:length", input.value, true);
+    function updateOnSliderInput(input) {
       updateDisplay(input.value);
       updateSliderVisual(input);
+    }
+
+    function setLength(input) {
+      configurator.setParamValue("main:length", input.value, true);
     }
 
     function setWidth(input) {
       configurator.setParamValue("main:width", input.value, true);
-      updateDisplay(input.value);
-      updateSliderVisual(input);
     }
 
     function setHeight(input) {
       configurator.setParamValue("main:height", input.value, true);
-      updateDisplay(input.value);
-      updateSliderVisual(input);
     }
 
     function setPoints(input) {
       configurator.setParamValue("main:points", input.value, true);
-      updateDisplay(input.value);
-      updateSliderVisual(input);
     }
 
     function updateDisplay(val) {
