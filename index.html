@@ -313,16 +313,16 @@
     </div>
 
     <div class="slider-container" id="length-container">
-      <input type="range" min="7" max="69" value="42" class="slider" onchange="setLength(this)" oninput="updateOnSliderInput(this)" />
+      <input type="range" min="7" max="69" value="42" class="slider" oninput="setLength(this)" oninput="updateOnSliderInput(this)" />
     </div>
     <div class="slider-container hidden" id="width-container">
-      <input type="range" min="7" max="69" value="42" class="slider" onchange="setWidth(this)" oninput="updateOnSliderInput(this)"/>
+      <input type="range" min="7" max="69" value="42" class="slider" oninput="setWidth(this)" oninput="updateOnSliderInput(this)"/>
     </div>
     <div class="slider-container hidden" id="height-container">
-      <input type="range" min="7" max="255" value="42" class="slider" onchange="setHeight(this)" oninput="updateOnSliderInput(this)"/>
+      <input type="range" min="7" max="255" value="42" class="slider" oninput="setHeight(this)" oninput="updateOnSliderInput(this)"/>
     </div>
     <div class="slider-container hidden" id="points-container">
-      <input type="range" min="3" max="10" value="4" class="slider" onchange="setPoints(this)" oninput="updateOnSliderInput(this)"/>
+      <input type="range" min="3" max="10" value="4" class="slider" oninput="setPoints(this)" oninput="updateOnSliderInput(this)"/>
     </div>
 
     <div class="display" id="display">42 mm</div>
