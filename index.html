@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Prism Configurator v2</title>
+  <title>Vial Holder Configurator</title>
 
   <style>
     html, body {
@@ -296,7 +296,7 @@
 
 <body>
   <div id="topbar">
-    <span class="topbar-title">Prism Configurator</span>
+    <span class="topbar-title">Vial Holder Configurator</span>
     <button class="top-button" onclick="downloadSTL()">⬇</button>
   </div>
 
@@ -304,26 +304,26 @@
 
   <div id="slider-section">
     <div class="buttons">
-      <button class="variable-btn active" data-target="length">L</button>
-      <button class="variable-btn" data-target="width">W</button>
-      <button class="variable-btn" data-target="height">H</button>
-      <button class="variable-btn" data-target="points">P</button>
+      <button class="variable-btn active" data-target="length">D</button>
+      <button class="variable-btn" data-target="width">H</button>
+      <button class="variable-btn" data-target="height">R</button>
+      <button class="variable-btn" data-target="points">C</button>
     </div>
 
     <div class="slider-container" id="length-container">
-      <input type="range" min="7" max="69" value="42" class="slider" oninput="setLength(this)" />
+      <input type="range" min="14" max="30" value="17" class="slider" onchange="setLength(this)" />
     </div>
     <div class="slider-container hidden" id="width-container">
-      <input type="range" min="7" max="69" value="42" class="slider" oninput="setWidth(this)" />
+      <input type="range" min="20" max="60" value="36" class="slider" onchange="setWidth(this)" />
     </div>
     <div class="slider-container hidden" id="height-container">
-      <input type="range" min="7" max="255" value="42" class="slider" oninput="setHeight(this)" />
+      <input type="range" min="1" max="10" value="3" class="slider" onchange="setHeight(this)" />
     </div>
     <div class="slider-container hidden" id="points-container">
-      <input type="range" min="3" max="10" value="4" class="slider" oninput="setPoints(this)" />
+      <input type="range" min="1" max="10" value="3" class="slider" onchange="setPoints(this)" />
     </div>
 
-    <div class="display" id="display">42 mm</div>
+    <div class="display" id="display">17 mm</div>
   </div>
 
   <script>
@@ -382,25 +382,25 @@
     }
 
     function setLength(input) {
-      configurator.setParamValue("main:length", input.value, true);
+      configurator.setParamValue("main:d_0", input.value, true);
       updateDisplay(input.value);
       updateSliderVisual(input);
     }
 
     function setWidth(input) {
-      configurator.setParamValue("main:width", input.value, true);
+      configurator.setParamValue("main:heightHole", input.value, true);
       updateDisplay(input.value);
       updateSliderVisual(input);
     }
 
     function setHeight(input) {
-      configurator.setParamValue("main:height", input.value, true);
+      configurator.setParamValue("main:rows", input.value, true);
       updateDisplay(input.value);
       updateSliderVisual(input);
     }
 
     function setPoints(input) {
-      configurator.setParamValue("main:points", input.value, true);
+      configurator.setParamValue("main:columns", input.value, true);
       updateDisplay(input.value);
       updateSliderVisual(input);
     }
@@ -408,7 +408,7 @@
     function updateDisplay(val) {
       const activeBtn = document.querySelector('.variable-btn.active');
       const target = activeBtn ? activeBtn.dataset.target : '';
-      const unit = (target === 'points') ? '' : ' mm';
+      const unit = (target === 'points' || target === 'height') ? '' : ' mm';
       document.getElementById("display").textContent = `${val}${unit}`;
     }
 
