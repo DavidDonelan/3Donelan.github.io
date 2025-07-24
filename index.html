@@ -9,8 +9,8 @@
     html, body {
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background: #F4F4F4;
       height: 100vh;
       overflow-x: hidden;
     }
@@ -18,64 +18,66 @@
     #topbar {
       width: 100%;
       height: 64px;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      background: #FFFFFF;
+      border-bottom: 1px solid #E0E0E0;
       display: flex;
       justify-content: flex-end;
       align-items: center;
       padding: 0 24px;
       box-sizing: border-box;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
 
     .topbar-title {
       font-size: 20px;
-      font-weight: 600;
-      color: #ffffff;
+      font-weight: 500;
+      color: #005BAC;
       flex-grow: 1;
       padding-left: 8px;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
     }
 
     .top-button {
       width: 44px;
       height: 44px;
-      background: rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: #005BAC;
+      border: none;
       cursor: pointer;
-      font-size: 20px;
-      color: #ffffff;
+      font-size: 18px;
+      color: #FFFFFF;
       text-align: center;
-      border-radius: 12px;
-      transition: all 0.3s ease;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 1px 3px rgba(0, 91, 172, 0.2);
     }
 
     .top-button:hover {
-      background: rgba(255, 255, 255, 0.3);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      background: #004A94;
+    }
+
+    .top-button:active {
+      background: #003D7A;
+      transform: translateY(1px);
     }
 
     #viewPort {
       width: 100vw;
       height: calc(100vh - 64px - 280px);
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(10px);
+      background: #FFFFFF;
       margin: 0;
       border-radius: 0;
+      border-bottom: 1px solid #E0E0E0;
     }
 
     #slider-section {
       width: 100%;
       height: 280px;
       padding: 32px 24px;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(15px);
-      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      background: #FFFFFF;
+      border-top: 1px solid #E0E0E0;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
@@ -93,33 +95,30 @@
     .variable-btn {
       width: 56px;
       height: 56px;
-      border-radius: 16px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      color: #ffffff;
-      font-weight: 600;
+      border-radius: 4px;
+      border: 2px solid #E0E0E0;
+      background: #FFFFFF;
+      color: #333333;
+      font-weight: 500;
       font-size: 18px;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
 
     .variable-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-      background: rgba(255, 255, 255, 0.2);
+      border-color: #005BAC;
+      background: #F8FBFF;
     }
 
     .variable-btn.active {
-      background: rgba(255, 255, 255, 0.9);
-      color: #6366f1;
-      border-color: rgba(255, 255, 255, 0.8);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      background: #005BAC;
+      color: #FFFFFF;
+      border-color: #005BAC;
+      box-shadow: 0 2px 6px rgba(0, 91, 172, 0.2);
     }
 
     .slider-container {
@@ -136,58 +135,57 @@
 
     .slider-container input[type="range"] {
       width: 100%;
-      height: 8px;
-      border-radius: 4px;
+      height: 6px;
+      border-radius: 3px;
       appearance: none;
-      background: linear-gradient(to right, #6366f1 0%, #6366f1 var(--slider-progress, 0%), rgba(255, 255, 255, 0.3) var(--slider-progress, 0%), rgba(255, 255, 255, 0.3) 100%);
+      background: linear-gradient(to right, #005BAC 0%, #005BAC var(--slider-progress, 0%), #E0E0E0 var(--slider-progress, 0%), #E0E0E0 100%);
       cursor: pointer;
       outline: none;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
     }
 
     .slider-container input[type="range"]:hover {
-      transform: scaleY(1.2);
+      transform: scaleY(1.1);
     }
 
     .slider-container input[type="range"]::-webkit-slider-thumb {
       appearance: none;
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      background: #005BAC;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-      transition: all 0.3s ease;
+      box-shadow: 0 2px 6px rgba(0, 91, 172, 0.3);
+      transition: all 0.2s ease;
     }
 
     .slider-container input[type="range"]::-webkit-slider-thumb:hover {
-      transform: scale(1.1);
-      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+      transform: scale(1.05);
+      box-shadow: 0 3px 8px rgba(0, 91, 172, 0.4);
     }
 
     .slider-container input[type="range"]::-moz-range-thumb {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      background: #005BAC;
       cursor: pointer;
       border: none;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      box-shadow: 0 2px 6px rgba(0, 91, 172, 0.3);
     }
 
     .display {
       padding: 16px 32px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
+      border: 1px solid #E0E0E0;
+      border-radius: 4px;
+      background: #FFFFFF;
       font-size: 18px;
-      font-weight: 600;
-      color: #ffffff;
+      font-weight: 500;
+      color: #333333;
       min-width: 120px;
       text-align: center;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      letter-spacing: 0.5px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      letter-spacing: 0.3px;
     }
 
     /* Mobile Responsiveness */
@@ -205,7 +203,7 @@
         width: 40px;
         height: 40px;
         font-size: 18px;
-        border-radius: 10px;
+        border-radius: 4px;
       }
 
       #viewPort {
@@ -222,7 +220,7 @@
         width: 48px;
         height: 48px;
         font-size: 16px;
-        border-radius: 12px;
+        border-radius: 4px;
       }
 
       .buttons {
@@ -238,7 +236,7 @@
         padding: 12px 24px;
         font-size: 16px;
         min-width: 100px;
-        border-radius: 12px;
+        border-radius: 4px;
       }
     }
 
@@ -313,16 +311,16 @@
     </div>
 
     <div class="slider-container" id="length-container">
-      <input type="range" min="7" max="69" value="42" class="slider" oninput="setLength(this)" oninput="updateOnSliderInput(this)" />
+      <input type="range" min="7" max="69" value="42" class="slider" oninput="setLength(this)" />
     </div>
     <div class="slider-container hidden" id="width-container">
-      <input type="range" min="7" max="69" value="42" class="slider" oninput="setWidth(this)" oninput="updateOnSliderInput(this)"/>
+      <input type="range" min="7" max="69" value="42" class="slider" oninput="setWidth(this)" />
     </div>
     <div class="slider-container hidden" id="height-container">
-      <input type="range" min="7" max="255" value="42" class="slider" oninput="setHeight(this)" oninput="updateOnSliderInput(this)"/>
+      <input type="range" min="7" max="255" value="42" class="slider" oninput="setHeight(this)" />
     </div>
     <div class="slider-container hidden" id="points-container">
-      <input type="range" min="3" max="10" value="4" class="slider" oninput="setPoints(this)" oninput="updateOnSliderInput(this)"/>
+      <input type="range" min="3" max="10" value="4" class="slider" oninput="setPoints(this)" />
     </div>
 
     <div class="display" id="display">42 mm</div>
@@ -383,25 +381,28 @@
       a.click();
     }
 
-    function updateOnSliderInput(input) {
+    function setLength(input) {
+      configurator.setParamValue("main:length", input.value, true);
       updateDisplay(input.value);
       updateSliderVisual(input);
     }
 
-    function setLength(input) {
-      configurator.setParamValue("main:length", input.value, true);
-    }
-
     function setWidth(input) {
       configurator.setParamValue("main:width", input.value, true);
+      updateDisplay(input.value);
+      updateSliderVisual(input);
     }
 
     function setHeight(input) {
       configurator.setParamValue("main:height", input.value, true);
+      updateDisplay(input.value);
+      updateSliderVisual(input);
     }
 
     function setPoints(input) {
       configurator.setParamValue("main:points", input.value, true);
+      updateDisplay(input.value);
+      updateSliderVisual(input);
     }
 
     function updateDisplay(val) {
