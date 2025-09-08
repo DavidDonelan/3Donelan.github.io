@@ -1,424 +1,701 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vial Holder Configurator</title>
-
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      background: #F4F4F4;
-      height: 100vh;
-      overflow-x: hidden;
-    }
-
-    #topbar {
-      width: 100%;
-      height: 64px;
-      background: #FFFFFF;
-      border-bottom: 1px solid #E0E0E0;
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      padding: 0 24px;
-      box-sizing: border-box;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    }
-
-    .topbar-title {
-      font-size: 20px;
-      font-weight: 500;
-      color: #005BAC;
-      flex-grow: 1;
-      padding-left: 8px;
-      letter-spacing: 0.3px;
-    }
-
-    .top-button {
-      width: 44px;
-      height: 44px;
-      background: #005BAC;
-      border: none;
-      cursor: pointer;
-      font-size: 18px;
-      color: #FFFFFF;
-      text-align: center;
-      border-radius: 4px;
-      transition: background-color 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 1px 3px rgba(0, 91, 172, 0.2);
-    }
-
-    .top-button:hover {
-      background: #004A94;
-    }
-
-    .top-button:active {
-      background: #003D7A;
-      transform: translateY(1px);
-    }
-
-    #viewPort {
-      width: 100vw;
-      height: calc(100vh - 64px - 280px);
-      background: #FFFFFF;
-      margin: 0;
-      border-radius: 0;
-      border-bottom: 1px solid #E0E0E0;
-    }
-
-    #slider-section {
-      width: 100%;
-      height: 280px;
-      padding: 32px 24px;
-      background: #FFFFFF;
-      border-top: 1px solid #E0E0E0;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 24px;
-    }
-
-    .buttons {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .variable-btn {
-      width: 56px;
-      height: 56px;
-      border-radius: 4px;
-      border: 2px solid #E0E0E0;
-      background: #FFFFFF;
-      color: #333333;
-      font-weight: 500;
-      font-size: 18px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    }
-
-    .variable-btn:hover {
-      border-color: #005BAC;
-      background: #F8FBFF;
-    }
-
-    .variable-btn.active {
-      background: #005BAC;
-      color: #FFFFFF;
-      border-color: #005BAC;
-      box-shadow: 0 2px 6px rgba(0, 91, 172, 0.2);
-    }
-
-    .slider-container {
-      width: 100%;
-      max-width: 400px;
-      display: flex;
-      justify-content: center;
-      padding: 0 16px;
-    }
-
-    .slider-container.hidden {
-      display: none;
-    }
-
-    .slider-container input[type="range"] {
-      width: 100%;
-      height: 6px;
-      border-radius: 3px;
-      appearance: none;
-      background: linear-gradient(to right, #005BAC 0%, #005BAC var(--slider-progress, 0%), #E0E0E0 var(--slider-progress, 0%), #E0E0E0 100%);
-      cursor: pointer;
-      outline: none;
-      transition: all 0.2s ease;
-    }
-
-    .slider-container input[type="range"]:hover {
-      transform: scaleY(1.1);
-    }
-
-    .slider-container input[type="range"]::-webkit-slider-thumb {
-      appearance: none;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: #005BAC;
-      cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0, 91, 172, 0.3);
-      transition: all 0.2s ease;
-    }
-
-    .slider-container input[type="range"]::-webkit-slider-thumb:hover {
-      transform: scale(1.05);
-      box-shadow: 0 3px 8px rgba(0, 91, 172, 0.4);
-    }
-
-    .slider-container input[type="range"]::-moz-range-thumb {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: #005BAC;
-      cursor: pointer;
-      border: none;
-      box-shadow: 0 2px 6px rgba(0, 91, 172, 0.3);
-    }
-
-    .display {
-      padding: 16px 32px;
-      border: 1px solid #E0E0E0;
-      border-radius: 4px;
-      background: #FFFFFF;
-      font-size: 18px;
-      font-weight: 500;
-      color: #333333;
-      min-width: 120px;
-      text-align: center;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-      letter-spacing: 0.3px;
-    }
-
-    /* Mobile Responsiveness */
-    @media (max-width: 768px) {
-      #topbar {
-        height: 56px;
-        padding: 0 16px;
-      }
-
-      .topbar-title {
-        font-size: 18px;
-      }
-
-      .top-button {
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
-        border-radius: 4px;
-      }
-
-      #viewPort {
-        height: calc(100vh - 56px - 320px);
-      }
-
-      #slider-section {
-        height: 320px;
-        padding: 24px 16px;
-        gap: 20px;
-      }
-
-      .variable-btn {
-        width: 48px;
-        height: 48px;
-        font-size: 16px;
-        border-radius: 4px;
-      }
-
-      .buttons {
-        gap: 12px;
-      }
-
-      .slider-container {
-        max-width: 300px;
-        padding: 0 8px;
-      }
-
-      .display {
-        padding: 12px 24px;
-        font-size: 16px;
-        min-width: 100px;
-        border-radius: 4px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      #topbar {
-        padding: 0 12px;
-      }
-
-      .topbar-title {
-        font-size: 16px;
-      }
-
-      #slider-section {
-        padding: 20px 12px;
-      }
-
-      .variable-btn {
-        width: 44px;
-        height: 44px;
-        font-size: 14px;
-      }
-
-      .slider-container {
-        max-width: 250px;
-      }
-
-      .display {
-        padding: 10px 20px;
-        font-size: 14px;
-      }
-    }
-
-    /* Landscape orientation adjustments */
-    @media (max-height: 600px) and (orientation: landscape) {
-      #slider-section {
-        height: 200px;
-        padding: 16px;
-        gap: 16px;
-      }
-
-      .variable-btn {
-        width: 48px;
-        height: 48px;
-      }
-
-      .display {
-        padding: 12px 24px;
-        font-size: 16px;
-      }
-    }
-  </style>
-
-  <script src="https://libs.paramate.trinckle.com/paramateConfigurator-latest.js"></script>
-  <script src="https://libs.paramate.trinckle.com/paramateControls-latest.js"></script>
-  <script src="https://libs.paramate.trinckle.com/paramateViewportWebGL-latest.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planetary Collision Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0f0f0f;
+            font-family: 'Segoe UI', monospace;
+            color: #e0e0e0;
+            overflow: hidden;
+            user-select: none;
+        }
+        
+        #canvas {
+            display: block;
+            cursor: crosshair;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%);
+        }
+        
+        .control-panel {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 28px;
+            border-radius: 16px;
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            min-width: 280px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        
+        .control-panel.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-40px) scale(0.95);
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            gap: 16px;
+        }
+        
+        .control-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #b0b0b0;
+            min-width: 85px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        
+        .control-slider {
+            flex: 1;
+            height: 8px;
+            background: linear-gradient(90deg, #2a2a2a 0%, #404040 100%);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none;
+        }
+        
+        .control-slider:hover {
+            background: linear-gradient(90deg, #333 0%, #4a4a4a 100%);
+            box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+        }
+        
+        .control-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #d0d0d0 100%);
+            border-radius: 50%;
+            cursor: grab;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
+        }
+        
+        .control-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+        }
+        
+        .control-slider::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+        }
+        
+        .control-value {
+            font-size: 12px;
+            color: #ffffff;
+            min-width: 45px;
+            text-align: right;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 28px;
+        }
+        
+        .btn {
+            flex: 1;
+            background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            padding: 14px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        
+        .btn:hover {
+            background: linear-gradient(135deg, #3a3a3a 0%, #4a4a4a 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn--primary {
+            background: linear-gradient(135deg, #4a4a4a 0%, #5a5a5a 100%);
+        }
+        
+        .btn--primary:hover {
+            background: linear-gradient(135deg, #5a5a5a 0%, #6a6a6a 100%);
+        }
+        
+        .toggle-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            padding: 14px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            backdrop-filter: blur(24px);
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-btn:hover {
+            background: rgba(20, 20, 20, 0.95);
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
-
 <body>
-  <div id="topbar">
-    <span class="topbar-title">Vial Holder Configurator</span>
-    <button class="top-button" onclick="downloadSTL()">⬇</button>
-  </div>
-
-  <div id="viewPort"></div>
-
-  <div id="slider-section">
-    <div class="buttons">
-      <button class="variable-btn active" data-target="length">D</button>
-      <button class="variable-btn" data-target="width">H</button>
-      <button class="variable-btn" data-target="height">R</button>
-      <button class="variable-btn" data-target="points">C</button>
+    <canvas id="canvas"></canvas>
+    
+    <button class="toggle-btn" onclick="Controls.toggle()">Hide Controls</button>
+    
+    <div class="control-panel" id="controlPanel">
+        <div class="control-group">
+            <label class="control-label">Planets</label>
+            <input type="range" class="control-slider" id="planetCount" min="1" max="30" value="8">
+            <span class="control-value" id="planetCountValue">8</span>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">Speed</label>
+            <input type="range" class="control-slider" id="speed" min="0.1" max="3" step="0.1" value="1">
+            <span class="control-value" id="speedValue">1.0</span>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">Gravity</label>
+            <input type="range" class="control-slider" id="gravity" min="10" max="5000" step="10" value="100">
+            <span class="control-value" id="gravityValue">100</span>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">Trails</label>
+            <input type="range" class="control-slider" id="trails" min="50" max="2000" value="500">
+            <span class="control-value" id="trailsValue">500</span>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">Fuse Speed</label>
+            <input type="range" class="control-slider" id="fuseSpeed" min="0" max="20" step="0.5" value="5">
+            <span class="control-value" id="fuseSpeedValue">5.0</span>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">Size</label>
+            <input type="range" class="control-slider" id="planetSize" min="0.05" max="2" step="0.05" value="1">
+            <span class="control-value" id="planetSizeValue">1.00</span>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">Bounce</label>
+            <input type="range" class="control-slider" id="bounciness" min="0" max="1" step="0.05" value="0.8">
+            <span class="control-value" id="bouncinessValue">0.80</span>
+        </div>
+        
+        <div class="button-group">
+            <button class="btn" onclick="Simulation.randomStart()">Random</button>
+            <button class="btn btn--primary" onclick="Simulation.bigBangStart()">Big Bang</button>
+        </div>
     </div>
 
-    <div class="slider-container" id="length-container">
-      <input type="range" min="14" max="30" value="17" class="slider" onchange="setLength(this)" />
-    </div>
-    <div class="slider-container hidden" id="width-container">
-      <input type="range" min="20" max="60" value="36" class="slider" onchange="setWidth(this)" />
-    </div>
-    <div class="slider-container hidden" id="height-container">
-      <input type="range" min="1" max="10" value="3" class="slider" onchange="setHeight(this)" />
-    </div>
-    <div class="slider-container hidden" id="points-container">
-      <input type="range" min="1" max="10" value="3" class="slider" onchange="setPoints(this)" />
-    </div>
+    <script>
+        const CONFIG = {
+            physics: {
+                gravityConstant: 0.001,
+                radiusScale: 3,
+                initialVelocityRange: 2,
+                massRange: { min: 10, max: 60 }
+            },
+            rendering: {
+                trailOpacity: 0.5,
+                canvasFade: 0.1,
+                speedColorRange: { min: 0, max: 10 }
+            },
+            bigBang: {
+                explosionStrengthRange: { min: 3, max: 5 },
+                radiusVariation: { min: 50, max: 80 },
+                angleNoise: 0.3,
+                velocityNoise: 0.2
+            }
+        };
 
-    <div class="display" id="display">17 mm</div>
-  </div>
+        const state = {
+            canvas: null,
+            ctx: null,
+            dimensions: { width: 0, height: 0 },
+            planets: [],
+            animationId: null,
+            speedRange: { min: 0, max: 10 },
+            settings: {
+                planetCount: 8,
+                speed: 1.0,
+                gravity: 100,
+                trailLength: 500,
+                fuseSpeed: 5.0,
+                planetSize: 1.0,
+                bounciness: 0.8
+            }
+        };
 
-  <script>
-    let configurator, viewPort, controls;
+        class Vector {
+            constructor(x = 0, y = 0) {
+                this.x = x;
+                this.y = y;
+            }
 
-    window.onload = function () {
-      configurator = new Paramate.Configurator({
-        APIHub: "https://api.paramate.trinckle.com",
-        configuratorId: "bdd29053-5a98-42bb-b299-78ce5e33a406",
-        APIKey: "a034021e936919de42cde9b20cfe6741",
-      });
+            static create(x, y) {
+                return new Vector(x, y);
+            }
 
-      viewPort = new Paramate.ViewportWebGL({
-        configurator: configurator,
-        viewportElement: document.getElementById("viewPort"),
-      });
+            static random(range = 1) {
+                return new Vector(
+                    (Math.random() - 0.5) * range,
+                    (Math.random() - 0.5) * range
+                );
+            }
 
-      controls = new Paramate.Controls({ configurator: configurator });
+            static fromPolar(magnitude, angle) {
+                return new Vector(
+                    magnitude * Math.cos(angle),
+                    magnitude * Math.sin(angle)
+                );
+            }
 
-      configurator.viewPort = viewPort;
-      configurator.controls = controls;
-      configurator.initialize();
+            static distance(v1, v2) {
+                return Math.sqrt((v2.x - v1.x) ** 2 + (v2.y - v1.y) ** 2);
+            }
 
-      const buttons = document.querySelectorAll(".variable-btn");
-      const sliderContainers = document.querySelectorAll(".slider-container");
-      const display = document.getElementById("display");
+            static subtract(v1, v2) {
+                return new Vector(v1.x - v2.x, v1.y - v2.y);
+            }
 
-      buttons.forEach((button) => {
-        button.addEventListener("click", () => {
-          buttons.forEach((b) => b.classList.remove("active"));
-          button.classList.add("active");
+            static normalize(vector) {
+                const mag = vector.magnitude();
+                return mag > 0 ? new Vector(vector.x / mag, vector.y / mag) : new Vector();
+            }
 
-          sliderContainers.forEach((sc) => sc.classList.add("hidden"));
-          const target = button.dataset.target;
-          const activeSliderContainer = document.getElementById(`${target}-container`);
-          activeSliderContainer.classList.remove("hidden");
+            add(vector) {
+                this.x += vector.x;
+                this.y += vector.y;
+                return this;
+            }
 
-          const input = activeSliderContainer.querySelector("input");
-          updateDisplay(input.value);
-          updateSliderVisual(input);
-        });
-      });
+            multiply(scalar) {
+                this.x *= scalar;
+                this.y *= scalar;
+                return this;
+            }
 
-      // Initialize slider visual on page load
-      const activeSlider = document.querySelector('.slider-container:not(.hidden) input');
-      if (activeSlider) {
-        updateSliderVisual(activeSlider);
-      }
-    };
+            magnitude() {
+                return Math.sqrt(this.x ** 2 + this.y ** 2);
+            }
 
-    function downloadSTL() {
-      const a = document.createElement("a");
-      a.href = configurator.getFinalizedModelUrl("stl", "Vial_Holder.stl");
-      document.body.appendChild(a);
-      a.click();
-    }
+            clone() {
+                return new Vector(this.x, this.y);
+            }
+        }
 
-    function setLength(input) {
-      configurator.setParamValue("main:d_0", input.value, true);
-      updateDisplay(input.value);
-      updateSliderVisual(input);
-    }
+        class Body {
+            constructor(position, velocity, mass) {
+                this.position = position;
+                this.velocity = velocity;
+                this.mass = mass;
+                this.radius = this.calculateRadius();
+                this.trail = [];
+                this.speed = 0;
+            }
 
-    function setWidth(input) {
-      configurator.setParamValue("main:heightHole", input.value, true);
-      updateDisplay(input.value);
-      updateSliderVisual(input);
-    }
+            static createRandom(bounds) {
+                const position = Vector.create(
+                    Math.random() * bounds.width,
+                    Math.random() * bounds.height
+                );
+                const velocity = Vector.random(CONFIG.physics.initialVelocityRange);
+                const mass = this.randomMass();
+                
+                return new Body(position, velocity, mass);
+            }
 
-    function setHeight(input) {
-      configurator.setParamValue("main:rows", input.value, true);
-      updateDisplay(input.value);
-      updateSliderVisual(input);
-    }
+            static createForBigBang(center, index, totalCount, explosionStrength, totalMass) {
+                const angle = (index * 2 * Math.PI) / totalCount + 
+                             (Math.random() - 0.5) * CONFIG.bigBang.angleNoise;
+                
+                const radius = CONFIG.bigBang.radiusVariation.min + 
+                              Math.random() * (CONFIG.bigBang.radiusVariation.max - CONFIG.bigBang.radiusVariation.min);
+                
+                const position = Vector.create(
+                    center.x + Math.cos(angle) * radius,
+                    center.y + Math.sin(angle) * radius
+                );
+                
+                const velocity = Vector.fromPolar(explosionStrength, angle)
+                    .add(Vector.random(explosionStrength * CONFIG.bigBang.velocityNoise));
+                
+                const mass = totalMass / totalCount;
+                
+                return new Body(position, velocity, mass);
+            }
 
-    function setPoints(input) {
-      configurator.setParamValue("main:columns", input.value, true);
-      updateDisplay(input.value);
-      updateSliderVisual(input);
-    }
+            static randomMass() {
+                const range = CONFIG.physics.massRange;
+                return Math.random() * (range.max - range.min) + range.min;
+            }
 
-    function updateDisplay(val) {
-      const activeBtn = document.querySelector('.variable-btn.active');
-      const target = activeBtn ? activeBtn.dataset.target : '';
-      const unit = (target === 'points' || target === 'height') ? '' : ' mm';
-      document.getElementById("display").textContent = `${val}${unit}`;
-    }
+            calculateRadius() {
+                return Math.sqrt(this.mass) * CONFIG.physics.radiusScale * state.settings.planetSize;
+            }
 
-    function updateSliderVisual(slider) {
-      const min = parseFloat(slider.min) || 0;
-      const max = parseFloat(slider.max) || 100;
-      const val = parseFloat(slider.value);
-      const percent = ((val - min) / (max - min)) * 100;
-      slider.style.setProperty('--slider-progress', `${percent}%`);
-    }
-  </script>
+            update() {
+                this.position.add(this.velocity.clone().multiply(state.settings.speed));
+                this.speed = this.velocity.magnitude();
+                this.handleBoundaries();
+                this.updateTrail();
+                this.radius = this.calculateRadius();
+            }
+
+            handleBoundaries() {
+                const { width, height } = state.dimensions;
+                
+                if (this.position.x - this.radius <= 0) {
+                    this.position.x = this.radius;
+                    this.velocity.x *= -1;
+                }
+                if (this.position.x + this.radius >= width) {
+                    this.position.x = width - this.radius;
+                    this.velocity.x *= -1;
+                }
+                if (this.position.y - this.radius <= 0) {
+                    this.position.y = this.radius;
+                    this.velocity.y *= -1;
+                }
+                if (this.position.y + this.radius >= height) {
+                    this.position.y = height - this.radius;
+                    this.velocity.y *= -1;
+                }
+            }
+
+            updateTrail() {
+                this.trail.push(this.position.clone());
+                if (this.trail.length > state.settings.trailLength) {
+                    this.trail.shift();
+                }
+            }
+
+            applyGravitationalForce(other) {
+                const direction = Vector.subtract(other.position, this.position);
+                const distance = direction.magnitude();
+                
+                if (distance > 0) {
+                    const force = state.settings.gravity * this.mass * other.mass / (distance ** 2);
+                    const acceleration = Vector.normalize(direction)
+                        .multiply(force / this.mass * CONFIG.physics.gravityConstant);
+                    this.velocity.add(acceleration);
+                }
+            }
+
+            isCollidingWith(other) {
+                return Vector.distance(this.position, other.position) < this.radius + other.radius;
+            }
+
+            getRelativeSpeed(other) {
+                return Vector.subtract(this.velocity, other.velocity).magnitude();
+            }
+
+            mergeWith(other) {
+                const totalMass = this.mass + other.mass;
+                const newPosition = Vector.create(
+                    (this.position.x * this.mass + other.position.x * other.mass) / totalMass,
+                    (this.position.y * this.mass + other.position.y * other.mass) / totalMass
+                );
+                const newVelocity = Vector.create(
+                    (this.velocity.x * this.mass + other.velocity.x * other.mass) / totalMass,
+                    (this.velocity.y * this.mass + other.velocity.y * other.mass) / totalMass
+                );
+                
+                return new Body(newPosition, newVelocity, totalMass);
+            }
+
+            bounceOff(other) {
+                const normal = Vector.normalize(Vector.subtract(other.position, this.position));
+                const relativeVelocity = Vector.subtract(other.velocity, this.velocity);
+                const velocityAlongNormal = relativeVelocity.x * normal.x + relativeVelocity.y * normal.y;
+
+                if (velocityAlongNormal > 0) return;
+
+                const restitution = state.settings.bounciness;
+                const impulse = (1 + restitution) * velocityAlongNormal / (this.mass + other.mass);
+                
+                this.velocity.add(Vector.create(normal.x, normal.y).multiply(impulse * other.mass));
+                other.velocity.add(Vector.create(normal.x, normal.y).multiply(-impulse * this.mass));
+
+                this.separateFrom(other, normal);
+            }
+
+            separateFrom(other, normal) {
+                const overlap = this.radius + other.radius - Vector.distance(this.position, other.position);
+                const separation = Vector.create(normal.x, normal.y).multiply(overlap * 0.5);
+                
+                this.position.add(Vector.create(-separation.x, -separation.y));
+                other.position.add(separation);
+            }
+
+            render() {
+                const color = Renderer.calculateSpeedColor(this.speed);
+                Renderer.drawTrail(this.trail, color);
+                Renderer.drawBody(this.position, this.radius, color);
+            }
+        }
+
+        const Canvas = {
+            initialize() {
+                state.canvas = document.getElementById('canvas');
+                state.ctx = state.canvas.getContext('2d');
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+            },
+
+            resize() {
+                state.dimensions.width = state.canvas.width = window.innerWidth;
+                state.dimensions.height = state.canvas.height = window.innerHeight;
+            }
+        };
+
+        const Renderer = {
+            calculateSpeedColor(speed) {
+                const normalized = Math.max(0, Math.min(1, 
+                    (speed - state.speedRange.min) / (state.speedRange.max - state.speedRange.min)
+                ));
+                const hue = 240 - (normalized * 240);
+                return `hsl(${hue}, 85%, 65%)`;
+            },
+
+            drawTrail(trail, color) {
+                trail.forEach((point, index) => {
+                    const alpha = (index / trail.length) * CONFIG.rendering.trailOpacity;
+                    state.ctx.globalAlpha = alpha;
+                    state.ctx.fillStyle = color;
+                    state.ctx.beginPath();
+                    state.ctx.arc(point.x, point.y, 1.5, 0, Math.PI * 2);
+                    state.ctx.fill();
+                });
+            },
+
+            drawBody(position, radius, color) {
+                state.ctx.globalAlpha = 1;
+                state.ctx.fillStyle = color;
+                state.ctx.beginPath();
+                state.ctx.arc(position.x, position.y, radius, 0, Math.PI * 2);
+                state.ctx.fill();
+                
+                state.ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                state.ctx.lineWidth = 1;
+                state.ctx.stroke();
+            },
+
+            clearCanvas() {
+                state.ctx.fillStyle = `rgba(15, 15, 15, ${CONFIG.rendering.canvasFade})`;
+                state.ctx.fillRect(0, 0, state.dimensions.width, state.dimensions.height);
+            },
+
+            renderFrame() {
+                this.updateSpeedRange();
+                this.clearCanvas();
+                state.planets.forEach(planet => planet.render());
+            },
+
+            updateSpeedRange() {
+                const speeds = state.planets.map(planet => planet.speed);
+                if (speeds.length > 0) {
+                    state.speedRange.min = Math.min(...speeds);
+                    state.speedRange.max = Math.max(...speeds);
+                    if (state.speedRange.max === state.speedRange.min) {
+                        state.speedRange.max = state.speedRange.min + 1;
+                    }
+                }
+            }
+        };
+
+        const Physics = {
+            applyGravitationalForces() {
+                for (let i = 0; i < state.planets.length; i++) {
+                    for (let j = i + 1; j < state.planets.length; j++) {
+                        state.planets[i].applyGravitationalForce(state.planets[j]);
+                        state.planets[j].applyGravitationalForce(state.planets[i]);
+                    }
+                }
+            },
+
+            handleCollisions() {
+                for (let i = 0; i < state.planets.length; i++) {
+                    for (let j = i + 1; j < state.planets.length; j++) {
+                        if (state.planets[i].isCollidingWith(state.planets[j])) {
+                            const relativeSpeed = state.planets[i].getRelativeSpeed(state.planets[j]);
+                            
+                            if (relativeSpeed > state.settings.fuseSpeed) {
+                                const merged = state.planets[i].mergeWith(state.planets[j]);
+                                state.planets.splice(j, 1);
+                                state.planets.splice(i, 1);
+                                state.planets.push(merged);
+                                return true;
+                            } else {
+                                state.planets[i].bounceOff(state.planets[j]);
+                            }
+                        }
+                    }
+                }
+                return false;
+            },
+
+            updateBodies() {
+                state.planets.forEach(planet => planet.update());
+            },
+
+            step() {
+                this.applyGravitationalForces();
+                const collisionOccurred = this.handleCollisions();
+                if (!collisionOccurred) {
+                    this.updateBodies();
+                }
+            }
+        };
+
+        const Controls = {
+            controlMappings: [
+                { id: 'planetCount', formatter: v => v.toString() },
+                { id: 'speed', formatter: v => v.toFixed(1) },
+                { id: 'gravity', formatter: v => v.toString() },
+                { id: 'trails', formatter: v => v.toString() },
+                { id: 'fuseSpeed', formatter: v => v.toFixed(1) },
+                { id: 'planetSize', formatter: v => v.toFixed(2) },
+                { id: 'bounciness', formatter: v => v.toFixed(2) }
+            ],
+
+            initialize() {
+                this.bindControls();
+            },
+
+            bindControls() {
+                this.controlMappings.forEach(control => {
+                    const slider = document.getElementById(control.id);
+                    const display = document.getElementById(control.id + 'Value');
+                    
+                    slider.addEventListener('input', (event) => {
+                        this.handleControlChange(control, parseFloat(event.target.value), display);
+                    });
+                });
+            },
+
+            handleControlChange(control, value, display) {
+                display.textContent = control.formatter(value);
+                state.settings[control.id] = value;
+
+                if (control.id === 'planetCount') {
+                    Simulation.randomStart();
+                } else if (control.id === 'planetSize') {
+                    this.updatePlanetSizes();
+                }
+            },
+
+            updatePlanetSizes() {
+                state.planets.forEach(planet => {
+                    planet.radius = planet.calculateRadius();
+                });
+            },
+
+            toggle() {
+                const panel = document.getElementById('controlPanel');
+                const button = document.querySelector('.toggle-btn');
+                
+                panel.classList.toggle('hidden');
+                button.textContent = panel.classList.contains('hidden') ? 'Show Controls' : 'Hide Controls';
+            }
+        };
+
+        const Simulation = {
+            initialize() {
+                Canvas.initialize();
+                Controls.initialize();
+                this.randomStart();
+                this.startAnimationLoop();
+            },
+
+            randomStart() {
+                this.stop();
+                state.planets = this.generateRandomPlanets();
+                this.startAnimationLoop();
+            },
+
+            bigBangStart() {
+                this.stop();
+                state.planets = this.generateBigBangPlanets();
+                this.startAnimationLoop();
+            },
+
+            generateRandomPlanets() {
+                return Array.from({ length: state.settings.planetCount }, () => 
+                    Body.createRandom(state.dimensions)
+                );
+            },
+
+            generateBigBangPlanets() {
+                const center = Vector.create(
+                    state.dimensions.width / 2,
+                    state.dimensions.height / 2
+                );
+                const totalMass = state.settings.planetCount * 40;
+                const explosionStrength = CONFIG.bigBang.explosionStrengthRange.min + 
+                    Math.random() * (CONFIG.bigBang.explosionStrengthRange.max - CONFIG.bigBang.explosionStrengthRange.min);
+                
+                return Array.from({ length: state.settings.planetCount }, (_, index) => 
+                    Body.createForBigBang(center, index, state.settings.planetCount, explosionStrength, totalMass)
+                );
+            },
+
+            stop() {
+                if (state.animationId) {
+                    cancelAnimationFrame(state.animationId);
+                }
+            },
+
+            startAnimationLoop() {
+                this.animate();
+            },
+
+            animate() {
+                Physics.step();
+                Renderer.renderFrame();
+                state.animationId = requestAnimationFrame(() => this.animate());
+            }
+        };
+
+        window.addEventListener('load', () => Simulation.initialize());
+    </script>
 </body>
 </html>
