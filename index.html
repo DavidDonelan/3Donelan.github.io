@@ -253,6 +253,14 @@
             planets: [],
             animationId: null,
             speedRange: { min: 0, max: 10 },
+            interaction: {
+                selectedPlanet: null,
+                isDragging: false,
+                touchOffset: { x: 0, y: 0 },
+                lastTapTime: 0,
+                lastTappedPlanet: null,
+                doubleTapDelay: 300
+            },
             settings: {
                 planetCount: 8,
                 speed: 1.0,
@@ -368,6 +376,31 @@
                 return Math.random() * (range.max - range.min) + range.min;
             }
 
+            static explodePlanet(planet, fragmentCount = 8) {
+                const fragments = [];
+                const fragmentMass = planet.mass / fragmentCount;
+                const explosionStrength = 2 + Math.random() * 3;
+                
+                for (let i = 0; i < fragmentCount; i++) {
+                    const angle = (i * 2 * Math.PI) / fragmentCount + 
+                                 (Math.random() - 0.5) * 0.5;
+                    const radius = planet.radius + Math.random() * 20;
+                    
+                    const position = Vector.create(
+                        planet.position.x + Math.cos(angle) * radius,
+                        planet.position.y + Math.sin(angle) * radius
+                    );
+                    
+                    const velocity = Vector.fromPolar(explosionStrength, angle)
+                        .add(Vector.random(explosionStrength * 0.3))
+                        .add(planet.velocity.clone().multiply(0.5));
+                    
+                    fragments.push(new Body(position, velocity, fragmentMass));
+                }
+                
+                return fragments;
+            }
+
             calculateRadius() {
                 return Math.sqrt(this.mass) * CONFIG.physics.radiusScale * state.settings.planetSize;
             }
@@ -467,9 +500,11 @@
             }
 
             render() {
+                const isSelected = state.interaction.selectedPlanet === this;
                 const color = Renderer.calculateSpeedColor(this.speed);
+                
                 Renderer.drawTrail(this.trail, color);
-                Renderer.drawBody(this.position, this.radius, color);
+                Renderer.drawBody(this.position, this.radius, color, isSelected);
             }
         }
 
@@ -478,7 +513,115 @@
                 state.canvas = document.getElementById('canvas');
                 state.ctx = state.canvas.getContext('2d');
                 this.resize();
+                this.setupEventListeners();
                 window.addEventListener('resize', () => this.resize());
+            },
+
+            setupEventListeners() {
+                state.canvas.addEventListener('mousedown', (e) => this.handlePointerStart(e));
+                state.canvas.addEventListener('mousemove', (e) => this.handlePointerMove(e));
+                state.canvas.addEventListener('mouseup', (e) => this.handlePointerEnd(e));
+                
+                state.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.handlePointerStart(e.touches[0]);
+                });
+                state.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    this.handlePointerMove(e.touches[0]);
+                });
+                state.canvas.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.handlePointerEnd(e);
+                });
+            },
+
+            getEventPosition(event) {
+                const rect = state.canvas.getBoundingClientRect();
+                return {
+                    x: (event.clientX || event.pageX) - rect.left,
+                    y: (event.clientY || event.pageY) - rect.top
+                };
+            },
+
+            findPlanetAt(position) {
+                return state.planets.find(planet => {
+                    const distance = Vector.distance(planet.position, position);
+                    return distance <= planet.radius + 10;
+                });
+            },
+
+            handlePointerStart(event) {
+                const position = this.getEventPosition(event);
+                const planet = this.findPlanetAt(position);
+                const currentTime = Date.now();
+                
+                if (planet) {
+                    if (state.interaction.lastTappedPlanet === planet &&
+                        currentTime - state.interaction.lastTapTime < state.interaction.doubleTapDelay) {
+                        this.explodePlanet(planet);
+                        return;
+                    }
+                    
+                    state.interaction.lastTappedPlanet = planet;
+                    state.interaction.lastTapTime = currentTime;
+                    state.interaction.selectedPlanet = planet;
+                    state.interaction.isDragging = true;
+                    state.interaction.touchOffset = {
+                        x: position.x - planet.position.x,
+                        y: position.y - planet.position.y
+                    };
+                    planet.velocity = Vector.create(0, 0);
+                } else {
+                    state.interaction.lastTappedPlanet = null;
+                }
+            },
+
+            explodePlanet(planet) {
+                const planetIndex = state.planets.indexOf(planet);
+                if (planetIndex === -1) return;
+                
+                const fragments = Body.explodePlanet(planet, 8);
+                state.planets.splice(planetIndex, 1);
+                state.planets.push(...fragments);
+                
+                state.interaction.selectedPlanet = null;
+                state.interaction.isDragging = false;
+                state.interaction.lastTappedPlanet = null;
+            },
+
+            handlePointerMove(event) {
+                if (state.interaction.isDragging && state.interaction.selectedPlanet) {
+                    const position = this.getEventPosition(event);
+                    const planet = state.interaction.selectedPlanet;
+                    
+                    planet.position.x = position.x - state.interaction.touchOffset.x;
+                    planet.position.y = position.y - state.interaction.touchOffset.y;
+                    
+                    this.constrainPlanetToBounds(planet);
+                }
+            },
+
+            handlePointerEnd(event) {
+                state.interaction.selectedPlanet = null;
+                state.interaction.isDragging = false;
+            },
+
+            constrainPlanetToBounds(planet) {
+                const { width, height } = state.dimensions;
+                
+                if (planet.position.x - planet.radius < 0) {
+                    planet.position.x = planet.radius;
+                }
+                if (planet.position.x + planet.radius > width) {
+                    planet.position.x = width - planet.radius;
+                }
+                if (planet.position.y - planet.radius < 0) {
+                    planet.position.y = planet.radius;
+                }
+                if (planet.position.y + planet.radius > height) {
+                    planet.position.y = height - planet.radius;
+                }
             },
 
             resize() {
@@ -507,15 +650,26 @@
                 });
             },
 
-            drawBody(position, radius, color) {
+            drawBody(position, radius, color, isSelected = false) {
                 state.ctx.globalAlpha = 1;
+                
+                if (isSelected) {
+                    state.ctx.shadowColor = color;
+                    state.ctx.shadowBlur = 20;
+                    state.ctx.fillStyle = color;
+                    state.ctx.beginPath();
+                    state.ctx.arc(position.x, position.y, radius + 3, 0, Math.PI * 2);
+                    state.ctx.fill();
+                    state.ctx.shadowBlur = 0;
+                }
+                
                 state.ctx.fillStyle = color;
                 state.ctx.beginPath();
                 state.ctx.arc(position.x, position.y, radius, 0, Math.PI * 2);
                 state.ctx.fill();
                 
-                state.ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-                state.ctx.lineWidth = 1;
+                state.ctx.strokeStyle = isSelected ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.4)';
+                state.ctx.lineWidth = isSelected ? 2 : 1;
                 state.ctx.stroke();
             },
 
@@ -546,13 +700,19 @@
             applyGravitationalForces() {
                 for (let i = 0; i < state.planets.length; i++) {
                     for (let j = i + 1; j < state.planets.length; j++) {
-                        state.planets[i].applyGravitationalForce(state.planets[j]);
-                        state.planets[j].applyGravitationalForce(state.planets[i]);
+                        if (!state.interaction.isDragging || 
+                            (state.planets[i] !== state.interaction.selectedPlanet && 
+                             state.planets[j] !== state.interaction.selectedPlanet)) {
+                            state.planets[i].applyGravitationalForce(state.planets[j]);
+                            state.planets[j].applyGravitationalForce(state.planets[i]);
+                        }
                     }
                 }
             },
 
             handleCollisions() {
+                if (state.interaction.isDragging) return false;
+                
                 for (let i = 0; i < state.planets.length; i++) {
                     for (let j = i + 1; j < state.planets.length; j++) {
                         if (state.planets[i].isCollidingWith(state.planets[j])) {
@@ -574,7 +734,15 @@
             },
 
             updateBodies() {
-                state.planets.forEach(planet => planet.update());
+                state.planets.forEach(planet => {
+                    if (planet !== state.interaction.selectedPlanet) {
+                        planet.update();
+                    } else if (state.interaction.isDragging) {
+                        planet.speed = 0;
+                        planet.updateTrail();
+                        planet.radius = planet.calculateRadius();
+                    }
+                });
             },
 
             step() {
