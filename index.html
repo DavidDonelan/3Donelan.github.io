@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planetary Collision Simulator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Wave Simulation - Point Editor</title>
     <style>
         * {
             margin: 0;
@@ -12,858 +12,1631 @@
         }
         
         body {
-            background: #0f0f0f;
-            font-family: 'Segoe UI', monospace;
-            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             overflow: hidden;
-            user-select: none;
+            background: #000;
         }
         
         #canvas {
-            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
             cursor: crosshair;
-            background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%);
+            touch-action: none;
+        }
+        
+        .menu-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .menu-icon {
+            width: 24px;
+            height: 18px;
+            position: relative;
+        }
+        
+        .menu-icon span {
+            display: block;
+            width: 100%;
+            height: 2px;
+            background: white;
+            margin: 4px 0;
+            transition: 0.3s;
+        }
+        
+        .menu-toggle.active .menu-icon span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        
+        .menu-toggle.active .menu-icon span:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .menu-toggle.active .menu-icon span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -6px);
         }
         
         .control-panel {
             position: fixed;
-            top: 24px;
-            left: 24px;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 28px;
-            border-radius: 16px;
-            backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            min-width: 280px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            top: 0;
+            right: -360px;
+            width: 360px;
+            height: 100vh;
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 999;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            color: white;
         }
         
-        .control-panel.hidden {
-            opacity: 0;
-            pointer-events: none;
-            transform: translateX(-40px) scale(0.95);
+        .control-panel.open {
+            right: 0;
+        }
+        
+        .panel-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .panel-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .panel-subtitle {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        .edit-mode-indicator {
+            font-size: 11px;
+            color: #00ff88;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .edit-mode-indicator.active {
+            display: block;
+        }
+        
+        .control-section {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            opacity: 0.9;
         }
         
         .control-group {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
-            gap: 16px;
+            margin-bottom: 20px;
         }
         
         .control-label {
-            font-size: 13px;
-            font-weight: 500;
-            color: #b0b0b0;
-            min-width: 85px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
+            display: block;
+            font-size: 12px;
+            margin-bottom: 8px;
+            opacity: 0.8;
         }
         
-        .control-slider {
-            flex: 1;
-            height: 8px;
-            background: linear-gradient(90deg, #2a2a2a 0%, #404040 100%);
-            border-radius: 4px;
+        .slider-container {
+            position: relative;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
             outline: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
             appearance: none;
+            -webkit-appearance: none;
         }
         
-        .control-slider:hover {
-            background: linear-gradient(90deg, #333 0%, #4a4a4a 100%);
-            box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
-        }
-        
-        .control-slider::-webkit-slider-thumb {
+        .slider::-webkit-slider-thumb {
             appearance: none;
+            -webkit-appearance: none;
             width: 20px;
             height: 20px;
-            background: linear-gradient(135deg, #ffffff 0%, #d0d0d0 100%);
+            background: white;
             border-radius: 50%;
-            cursor: grab;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-            transition: all 0.2s ease;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         }
         
-        .control-slider::-webkit-slider-thumb:hover {
-            transform: scale(1.15);
-            box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         }
         
-        .control-slider::-webkit-slider-thumb:active {
-            cursor: grabbing;
-            transform: scale(1.05);
-        }
-        
-        .control-value {
-            font-size: 12px;
-            color: #ffffff;
-            min-width: 45px;
-            text-align: right;
-            font-weight: 600;
-            font-family: 'Courier New', monospace;
+        .slider-value {
+            position: absolute;
+            right: 0;
+            top: -25px;
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            min-width: 35px;
+            text-align: center;
         }
         
         .button-group {
             display: flex;
-            gap: 12px;
-            margin-top: 28px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
         
-        .btn {
+        .control-button {
             flex: 1;
-            background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #ffffff;
-            padding: 14px 20px;
-            border-radius: 10px;
-            cursor: pointer;
+            min-width: 80px;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
             font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-        
-        .btn:hover {
-            background: linear-gradient(135deg, #3a3a3a 0%, #4a4a4a 100%);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-        }
-        
-        .btn:active {
-            transform: translateY(-1px);
-        }
-        
-        .btn--primary {
-            background: linear-gradient(135deg, #4a4a4a 0%, #5a5a5a 100%);
-        }
-        
-        .btn--primary:hover {
-            background: linear-gradient(135deg, #5a5a5a 0%, #6a6a6a 100%);
-        }
-        
-        .toggle-btn {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: rgba(0, 0, 0, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #ffffff;
-            padding: 14px 20px;
-            border-radius: 10px;
             cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .control-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .control-button:active {
+            transform: scale(0.98);
+        }
+        
+        .control-button.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .control-button.edit-mode {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: rgba(0, 255, 136, 0.4);
+        }
+        
+        .control-button.edit-mode:hover {
+            background: rgba(0, 255, 136, 0.3);
+        }
+        
+        .control-button.delete {
+            background: rgba(255, 68, 68, 0.2);
+            border-color: rgba(255, 68, 68, 0.4);
+        }
+        
+        .control-button.delete:hover {
+            background: rgba(255, 68, 68, 0.3);
+        }
+        
+        .stats-display {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-top: 10px;
+        }
+        
+        .performance-info {
+            font-size: 10px;
+            opacity: 0.5;
+            margin-top: 5px;
+            font-family: monospace;
+        }
+        
+        .point-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .point-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .point-id {
             font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            backdrop-filter: blur(24px);
+            opacity: 0.7;
+            font-family: monospace;
+        }
+        
+        .no-selection {
+            text-align: center;
+            opacity: 0.5;
+            font-size: 12px;
+            padding: 20px;
+        }
+        
+        .point-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        
+        .point-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 12px;
+        }
+        
+        .point-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .point-item.selected {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .panel-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 998;
+            opacity: 0;
+            visibility: hidden;
             transition: all 0.3s ease;
         }
         
-        .toggle-btn:hover {
+        .panel-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .welcome-modal {
             background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            color: white;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        .welcome-header {
+            padding: 30px 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .welcome-header h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: white;
+        }
+        
+        .welcome-header p {
+            font-size: 14px;
+            opacity: 0.7;
+            margin: 0;
+        }
+        
+        .welcome-content {
+            padding: 25px 30px;
+        }
+        
+        .instruction-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .instruction-item {
+            font-size: 14px;
+            line-height: 1.5;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .instruction-item strong {
+            color: #00ff88;
+            font-weight: 600;
+        }
+        
+        .welcome-footer {
+            padding: 20px 30px 30px;
+            text-align: center;
+        }
+        
+        .welcome-button {
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 16px 32px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+        }
+        
+        .welcome-button:hover {
             transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+        }
+        
+        .welcome-button:active {
+            transform: translateY(0);
+        }
+        
+        @media (min-width: 768px) {
+            .menu-toggle {
+                top: 30px;
+                right: 30px;
+                width: 60px;
+                height: 60px;
+            }
+            
+            .control-panel {
+                width: 400px;
+                right: -400px;
+            }
+            
+            .control-section {
+                padding: 25px;
+            }
         }
     </style>
 </head>
 <body>
     <canvas id="canvas"></canvas>
     
-    <button class="toggle-btn" onclick="Controls.toggle()">Hide Controls</button>
+    <!-- Welcome Modal -->
+    <div class="welcome-overlay" id="welcomeOverlay">
+        <div class="welcome-modal">
+            <div class="welcome-header">
+                <h2>Wave Physics Simulation</h2>
+                <p>Interactive wave interference patterns</p>
+            </div>
+            <div class="welcome-content">
+                <div class="instruction-list">
+                    <div class="instruction-item">
+                        <strong>Create waves:</strong> Double-tap empty space to add wave sources
+                    </div>
+                    <div class="instruction-item">
+                        <strong>Select & move:</strong> Tap a point to select, then drag to reposition
+                    </div>
+                    <div class="instruction-item">
+                        <strong>Customize:</strong> Use the menu (top-right) to adjust wave properties
+                    </div>
+                    <div class="instruction-item">
+                        <strong>Synchronize:</strong> Use the sync button to coordinate all wave emissions
+                    </div>
+                </div>
+            </div>
+            <div class="welcome-footer">
+                <button class="welcome-button" id="welcomeStartBtn">Get Started</button>
+            </div>
+        </div>
+    </div>
+    
+    <button class="menu-toggle" id="menuToggle">
+        <div class="menu-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </button>
+    
+    <div class="panel-overlay" id="panelOverlay"></div>
     
     <div class="control-panel" id="controlPanel">
-        <div class="control-group">
-            <label class="control-label">Planets</label>
-            <input type="range" class="control-slider" id="planetCount" min="1" max="30" value="8">
-            <span class="control-value" id="planetCountValue">8</span>
+        <div class="panel-header">
+            <div class="panel-title">Wave Point Editor</div>
+            <div class="panel-subtitle">Double-tap canvas to add points, select and drag to move</div>
         </div>
         
-        <div class="control-group">
-            <label class="control-label">Speed</label>
-            <input type="range" class="control-slider" id="speed" min="0.1" max="3" step="0.1" value="1">
-            <span class="control-value" id="speedValue">1.0</span>
+        <div class="control-section">
+            <div class="section-title">Animation</div>
+            <div class="button-group">
+                <button class="control-button" id="clearBtn">Clear All</button>
+                <button class="control-button" id="playPauseBtn">Pause</button>
+                <button class="control-button" id="syncBtn">Sync</button>
+            </div>
+            <div class="button-group" style="margin-top: 10px;">
+                <button class="control-button" id="showPointsBtn">Show Points</button>
+            </div>
+            <div class="stats-display" id="stats">Points: 0</div>
         </div>
         
-        <div class="control-group">
-            <label class="control-label">Gravity</label>
-            <input type="range" class="control-slider" id="gravity" min="10" max="5000" step="10" value="100">
-            <span class="control-value" id="gravityValue">100</span>
+        <div class="control-section">
+            <div class="section-title">Point List</div>
+            <div class="point-list" id="pointList">
+                <div class="no-selection">No points created</div>
+            </div>
         </div>
         
-        <div class="control-group">
-            <label class="control-label">Trails</label>
-            <input type="range" class="control-slider" id="trails" min="50" max="2000" value="500">
-            <span class="control-value" id="trailsValue">500</span>
+        <div class="control-section" id="selectedPointSection" style="display: none;">
+            <div class="section-title">Selected Point</div>
+            <div class="point-section">
+                <div class="point-header">
+                    <span class="point-id" id="selectedPointId">Point #1</span>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Wave Type</label>
+                    <div class="button-group">
+                        <button class="control-button active" id="pointWaveTypeBtn">Sine</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Strength</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="pointStrengthSlider" 
+                               min="10" max="100" step="5" value="60">
+                        <div class="slider-value" id="pointStrengthValue">60</div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Frequency</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="pointFrequencySlider" 
+                               min="0.005" max="0.08" step="0.005" value="0.02">
+                        <div class="slider-value" id="pointFrequencyValue">0.020</div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Speed</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="pointSpeedSlider" 
+                               min="0.1" max="1.0" step="0.1" value="1.0">
+                        <div class="slider-value" id="pointSpeedValue">1.0</div>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="control-button delete" id="deletePointBtn">Delete Point</button>
+                </div>
+            </div>
         </div>
         
-        <div class="control-group">
-            <label class="control-label">Fuse Speed</label>
-            <input type="range" class="control-slider" id="fuseSpeed" min="0" max="20" step="0.5" value="5">
-            <span class="control-value" id="fuseSpeedValue">5.0</span>
+        <div class="control-section">
+            <div class="section-title">Medium Properties</div>
+            
+            <div class="control-group">
+                <label class="control-label">Wave Fade</label>
+                <div class="slider-container">
+                    <input type="range" class="slider" id="fadeSlider" 
+                           min="0.0" max="0.03" step="0.002" value="0.008">
+                    <div class="slider-value" id="fadeValue">0.008</div>
+                </div>
+            </div>
         </div>
         
-        <div class="control-group">
-            <label class="control-label">Size</label>
-            <input type="range" class="control-slider" id="planetSize" min="0.05" max="2" step="0.05" value="1">
-            <span class="control-value" id="planetSizeValue">1.00</span>
-        </div>
-        
-        <div class="control-group">
-            <label class="control-label">Bounce</label>
-            <input type="range" class="control-slider" id="bounciness" min="0" max="1" step="0.05" value="0.8">
-            <span class="control-value" id="bouncinessValue">0.80</span>
-        </div>
-        
-        <div class="button-group">
-            <button class="btn" onclick="Simulation.randomStart()">Random</button>
-            <button class="btn btn--primary" onclick="Simulation.bigBangStart()">Big Bang</button>
+        <div class="control-section">
+            <div class="section-title">Performance</div>
+            <div class="control-group">
+                <label class="control-label">Resolution</label>
+                <div class="slider-container">
+                    <input type="range" class="slider" id="performanceSlider" 
+                           min="0" max="5" step="1" value="1">
+                    <div class="slider-value" id="performanceValue">Balanced</div>
+                </div>
+                <div class="performance-info" id="performanceInfo">
+                    Resolution: calculating...
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label class="control-label">Frame Rate</label>
+                <div class="slider-container">
+                    <input type="range" class="slider" id="fpsSlider" 
+                           min="15" max="60" step="15" value="30">
+                    <div class="slider-value" id="fpsValue">30 FPS</div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        const CONFIG = {
-            physics: {
-                gravityConstant: 0.001,
-                radiusScale: 3,
-                initialVelocityRange: 2,
-                massRange: { min: 10, max: 60 }
-            },
-            rendering: {
-                trailOpacity: 0.5,
-                canvasFade: 0.1,
-                speedColorRange: { min: 0, max: 10 }
-            },
-            bigBang: {
-                explosionStrengthRange: { min: 3, max: 5 },
-                radiusVariation: { min: 50, max: 80 },
-                angleNoise: 0.3,
-                velocityNoise: 0.2
-            }
-        };
+        'use strict';
 
-        const state = {
-            canvas: null,
-            ctx: null,
-            dimensions: { width: 0, height: 0 },
-            planets: [],
-            animationId: null,
-            speedRange: { min: 0, max: 10 },
-            interaction: {
-                selectedPlanet: null,
-                isDragging: false,
-                touchOffset: { x: 0, y: 0 },
-                lastTapTime: 0,
-                lastTappedPlanet: null,
-                doubleTapDelay: 300
+        // ===== CONFIGURATION =====
+        const CONFIG = Object.freeze({
+            wave: {
+                maxAmplitude: 100,
+                timeStep: 0.2
             },
-            settings: {
-                planetCount: 8,
+            performance: {
+                levels: Object.freeze([
+                    { skip: 1, label: 'Quality' },
+                    { skip: 2, label: 'Balanced' },
+                    { skip: 4, label: 'Fast' },
+                    { skip: 8, label: 'Faster' },
+                    { skip: 16, label: 'Very Fast' },
+                    { skip: 32, label: 'Ultra Fast' }
+                ]),
+                default: 1
+            },
+            defaults: {
+                strength: 60,
+                frequency: 0.02,
                 speed: 1.0,
-                gravity: 100,
-                trailLength: 500,
-                fuseSpeed: 5.0,
-                planetSize: 1.0,
-                bounciness: 0.8
+                waveType: 'sine'
+            },
+            medium: {
+                fade: 0.008
+            },
+            interaction: {
+                pointRadius: 12,
+                visualRadius: 6,
+                editRadius: 8
+            },
+            animation: {
+                targetFPS: 30,
+                minFPS: 15,
+                maxFPS: 60
+            }
+        });
+
+        // ===== UTILITIES =====
+        const Utils = {
+            clamp: (value, min, max) => Math.max(min, Math.min(max, value)),
+            
+            formatValue: (value, decimals = 3) => {
+                return typeof value === 'number' ? value.toFixed(decimals) : String(value);
+            },
+            
+            distance: (x1, y1, x2, y2) => {
+                return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+            },
+            
+            generateId: () => {
+                return `point_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             }
         };
 
-        class Vector {
-            constructor(x = 0, y = 0) {
+        // ===== WAVE MATHEMATICS =====
+        const WaveMath = Object.freeze({
+            sine: (phase, amplitude) => amplitude * Math.sin(phase),
+            
+            step: (phase, amplitude) => {
+                const normalizedPhase = ((phase % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
+                return amplitude * (normalizedPhase < Math.PI ? 1 : -1);
+            },
+            
+            applyFade: (value, distance, fadeRate) => value * Math.exp(-distance * fadeRate),
+            
+            toIntensity: (waveValue) => {
+                const normalized = waveValue / CONFIG.wave.maxAmplitude;
+                return Utils.clamp(128 + normalized * 127, 0, 255);
+            }
+        });
+
+        // ===== WAVE POINT =====
+        class WavePoint {
+            constructor(x, y, properties = {}) {
+                this.id = Utils.generateId();
                 this.x = x;
                 this.y = y;
-            }
-
-            static create(x, y) {
-                return new Vector(x, y);
-            }
-
-            static random(range = 1) {
-                return new Vector(
-                    (Math.random() - 0.5) * range,
-                    (Math.random() - 0.5) * range
-                );
-            }
-
-            static fromPolar(magnitude, angle) {
-                return new Vector(
-                    magnitude * Math.cos(angle),
-                    magnitude * Math.sin(angle)
-                );
-            }
-
-            static distance(v1, v2) {
-                return Math.sqrt((v2.x - v1.x) ** 2 + (v2.y - v1.y) ** 2);
-            }
-
-            static subtract(v1, v2) {
-                return new Vector(v1.x - v2.x, v1.y - v2.y);
-            }
-
-            static normalize(vector) {
-                const mag = vector.magnitude();
-                return mag > 0 ? new Vector(vector.x / mag, vector.y / mag) : new Vector();
-            }
-
-            add(vector) {
-                this.x += vector.x;
-                this.y += vector.y;
-                return this;
-            }
-
-            multiply(scalar) {
-                this.x *= scalar;
-                this.y *= scalar;
-                return this;
-            }
-
-            magnitude() {
-                return Math.sqrt(this.x ** 2 + this.y ** 2);
-            }
-
-            clone() {
-                return new Vector(this.x, this.y);
-            }
-        }
-
-        class Body {
-            constructor(position, velocity, mass) {
-                this.position = position;
-                this.velocity = velocity;
-                this.mass = mass;
-                this.radius = this.calculateRadius();
-                this.trail = [];
-                this.speed = 0;
-            }
-
-            static createRandom(bounds) {
-                const position = Vector.create(
-                    Math.random() * bounds.width,
-                    Math.random() * bounds.height
-                );
-                const velocity = Vector.random(CONFIG.physics.initialVelocityRange);
-                const mass = this.randomMass();
+                this.startTime = 0;
+                this.selected = false;
                 
-                return new Body(position, velocity, mass);
+                this.strength = properties.strength || CONFIG.defaults.strength;
+                this.frequency = properties.frequency || CONFIG.defaults.frequency;
+                this.speed = properties.speed || CONFIG.defaults.speed;
+                this.waveType = properties.waveType || CONFIG.defaults.waveType;
             }
-
-            static createForBigBang(center, index, totalCount, explosionStrength, totalMass) {
-                const angle = (index * 2 * Math.PI) / totalCount + 
-                             (Math.random() - 0.5) * CONFIG.bigBang.angleNoise;
-                
-                const radius = CONFIG.bigBang.radiusVariation.min + 
-                              Math.random() * (CONFIG.bigBang.radiusVariation.max - CONFIG.bigBang.radiusVariation.min);
-                
-                const position = Vector.create(
-                    center.x + Math.cos(angle) * radius,
-                    center.y + Math.sin(angle) * radius
-                );
-                
-                const velocity = Vector.fromPolar(explosionStrength, angle)
-                    .add(Vector.random(explosionStrength * CONFIG.bigBang.velocityNoise));
-                
-                const mass = totalMass / totalCount;
-                
-                return new Body(position, velocity, mass);
+            
+            setStartTime(time) {
+                this.startTime = time;
             }
-
-            static randomMass() {
-                const range = CONFIG.physics.massRange;
-                return Math.random() * (range.max - range.min) + range.min;
+            
+            getAge(currentTime) {
+                return currentTime - this.startTime;
             }
-
-            static explodePlanet(planet, fragmentCount = 8) {
-                const fragments = [];
-                const fragmentMass = planet.mass / fragmentCount;
-                const explosionStrength = 2 + Math.random() * 3;
-                
-                for (let i = 0; i < fragmentCount; i++) {
-                    const angle = (i * 2 * Math.PI) / fragmentCount + 
-                                 (Math.random() - 0.5) * 0.5;
-                    const radius = planet.radius + Math.random() * 20;
-                    
-                    const position = Vector.create(
-                        planet.position.x + Math.cos(angle) * radius,
-                        planet.position.y + Math.sin(angle) * radius
-                    );
-                    
-                    const velocity = Vector.fromPolar(explosionStrength, angle)
-                        .add(Vector.random(explosionStrength * 0.3))
-                        .add(planet.velocity.clone().multiply(0.5));
-                    
-                    fragments.push(new Body(position, velocity, fragmentMass));
-                }
-                
-                return fragments;
+            
+            distanceTo(x, y) {
+                return Utils.distance(this.x, this.y, x, y);
             }
-
-            calculateRadius() {
-                return Math.sqrt(this.mass) * CONFIG.physics.radiusScale * state.settings.planetSize;
+            
+            isHit(x, y, editMode = false) {
+                const radius = editMode ? CONFIG.interaction.pointRadius + 4 : CONFIG.interaction.pointRadius;
+                return this.distanceTo(x, y) <= radius;
             }
-
-            update() {
-                this.position.add(this.velocity.clone().multiply(state.settings.speed));
-                this.speed = this.velocity.magnitude();
-                this.handleBoundaries();
-                this.updateTrail();
-                this.radius = this.calculateRadius();
-            }
-
-            handleBoundaries() {
-                const { width, height } = state.dimensions;
-                
-                if (this.position.x - this.radius <= 0) {
-                    this.position.x = this.radius;
-                    this.velocity.x *= -1;
-                }
-                if (this.position.x + this.radius >= width) {
-                    this.position.x = width - this.radius;
-                    this.velocity.x *= -1;
-                }
-                if (this.position.y - this.radius <= 0) {
-                    this.position.y = this.radius;
-                    this.velocity.y *= -1;
-                }
-                if (this.position.y + this.radius >= height) {
-                    this.position.y = height - this.radius;
-                    this.velocity.y *= -1;
-                }
-            }
-
-            updateTrail() {
-                this.trail.push(this.position.clone());
-                if (this.trail.length > state.settings.trailLength) {
-                    this.trail.shift();
-                }
-            }
-
-            applyGravitationalForce(other) {
-                const direction = Vector.subtract(other.position, this.position);
-                const distance = direction.magnitude();
-                
-                if (distance > 0) {
-                    const force = state.settings.gravity * this.mass * other.mass / (distance ** 2);
-                    const acceleration = Vector.normalize(direction)
-                        .multiply(force / this.mass * CONFIG.physics.gravityConstant);
-                    this.velocity.add(acceleration);
-                }
-            }
-
-            isCollidingWith(other) {
-                return Vector.distance(this.position, other.position) < this.radius + other.radius;
-            }
-
-            getRelativeSpeed(other) {
-                return Vector.subtract(this.velocity, other.velocity).magnitude();
-            }
-
-            mergeWith(other) {
-                const totalMass = this.mass + other.mass;
-                const newPosition = Vector.create(
-                    (this.position.x * this.mass + other.position.x * other.mass) / totalMass,
-                    (this.position.y * this.mass + other.position.y * other.mass) / totalMass
-                );
-                const newVelocity = Vector.create(
-                    (this.velocity.x * this.mass + other.velocity.x * other.mass) / totalMass,
-                    (this.velocity.y * this.mass + other.velocity.y * other.mass) / totalMass
-                );
-                
-                return new Body(newPosition, newVelocity, totalMass);
-            }
-
-            bounceOff(other) {
-                const normal = Vector.normalize(Vector.subtract(other.position, this.position));
-                const relativeVelocity = Vector.subtract(other.velocity, this.velocity);
-                const velocityAlongNormal = relativeVelocity.x * normal.x + relativeVelocity.y * normal.y;
-
-                if (velocityAlongNormal > 0) return;
-
-                const restitution = state.settings.bounciness;
-                const impulse = (1 + restitution) * velocityAlongNormal / (this.mass + other.mass);
-                
-                this.velocity.add(Vector.create(normal.x, normal.y).multiply(impulse * other.mass));
-                other.velocity.add(Vector.create(normal.x, normal.y).multiply(-impulse * this.mass));
-
-                this.separateFrom(other, normal);
-            }
-
-            separateFrom(other, normal) {
-                const overlap = this.radius + other.radius - Vector.distance(this.position, other.position);
-                const separation = Vector.create(normal.x, normal.y).multiply(overlap * 0.5);
-                
-                this.position.add(Vector.create(-separation.x, -separation.y));
-                other.position.add(separation);
-            }
-
-            render() {
-                const isSelected = state.interaction.selectedPlanet === this;
-                const color = Renderer.calculateSpeedColor(this.speed);
-                
-                Renderer.drawTrail(this.trail, color);
-                Renderer.drawBody(this.position, this.radius, color, isSelected);
-            }
-        }
-
-        const Canvas = {
-            initialize() {
-                state.canvas = document.getElementById('canvas');
-                state.ctx = state.canvas.getContext('2d');
-                this.resize();
-                this.setupEventListeners();
-                window.addEventListener('resize', () => this.resize());
-            },
-
-            setupEventListeners() {
-                state.canvas.addEventListener('mousedown', (e) => this.handlePointerStart(e));
-                state.canvas.addEventListener('mousemove', (e) => this.handlePointerMove(e));
-                state.canvas.addEventListener('mouseup', (e) => this.handlePointerEnd(e));
-                
-                state.canvas.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    this.handlePointerStart(e.touches[0]);
-                });
-                state.canvas.addEventListener('touchmove', (e) => {
-                    e.preventDefault();
-                    this.handlePointerMove(e.touches[0]);
-                });
-                state.canvas.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    this.handlePointerEnd(e);
-                });
-            },
-
-            getEventPosition(event) {
-                const rect = state.canvas.getBoundingClientRect();
-                return {
-                    x: (event.clientX || event.pageX) - rect.left,
-                    y: (event.clientY || event.pageY) - rect.top
-                };
-            },
-
-            findPlanetAt(position) {
-                return state.planets.find(planet => {
-                    const distance = Vector.distance(planet.position, position);
-                    return distance <= planet.radius + 10;
-                });
-            },
-
-            handlePointerStart(event) {
-                const position = this.getEventPosition(event);
-                const planet = this.findPlanetAt(position);
-                const currentTime = Date.now();
-                
-                if (planet) {
-                    if (state.interaction.lastTappedPlanet === planet &&
-                        currentTime - state.interaction.lastTapTime < state.interaction.doubleTapDelay) {
-                        this.explodePlanet(planet);
-                        return;
-                    }
-                    
-                    state.interaction.lastTappedPlanet = planet;
-                    state.interaction.lastTapTime = currentTime;
-                    state.interaction.selectedPlanet = planet;
-                    state.interaction.isDragging = true;
-                    state.interaction.touchOffset = {
-                        x: position.x - planet.position.x,
-                        y: position.y - planet.position.y
-                    };
-                    planet.velocity = Vector.create(0, 0);
-                } else {
-                    state.interaction.lastTappedPlanet = null;
-                }
-            },
-
-            explodePlanet(planet) {
-                const planetIndex = state.planets.indexOf(planet);
-                if (planetIndex === -1) return;
-                
-                const fragments = Body.explodePlanet(planet, 8);
-                state.planets.splice(planetIndex, 1);
-                state.planets.push(...fragments);
-                
-                state.interaction.selectedPlanet = null;
-                state.interaction.isDragging = false;
-                state.interaction.lastTappedPlanet = null;
-            },
-
-            handlePointerMove(event) {
-                if (state.interaction.isDragging && state.interaction.selectedPlanet) {
-                    const position = this.getEventPosition(event);
-                    const planet = state.interaction.selectedPlanet;
-                    
-                    planet.position.x = position.x - state.interaction.touchOffset.x;
-                    planet.position.y = position.y - state.interaction.touchOffset.y;
-                    
-                    this.constrainPlanetToBounds(planet);
-                }
-            },
-
-            handlePointerEnd(event) {
-                state.interaction.selectedPlanet = null;
-                state.interaction.isDragging = false;
-            },
-
-            constrainPlanetToBounds(planet) {
-                const { width, height } = state.dimensions;
-                
-                if (planet.position.x - planet.radius < 0) {
-                    planet.position.x = planet.radius;
-                }
-                if (planet.position.x + planet.radius > width) {
-                    planet.position.x = width - planet.radius;
-                }
-                if (planet.position.y - planet.radius < 0) {
-                    planet.position.y = planet.radius;
-                }
-                if (planet.position.y + planet.radius > height) {
-                    planet.position.y = height - planet.radius;
-                }
-            },
-
-            resize() {
-                state.dimensions.width = state.canvas.width = window.innerWidth;
-                state.dimensions.height = state.canvas.height = window.innerHeight;
-            }
-        };
-
-        const Renderer = {
-            calculateSpeedColor(speed) {
-                const normalized = Math.max(0, Math.min(1, 
-                    (speed - state.speedRange.min) / (state.speedRange.max - state.speedRange.min)
-                ));
-                const hue = 240 - (normalized * 240);
-                return `hsl(${hue}, 85%, 65%)`;
-            },
-
-            drawTrail(trail, color) {
-                trail.forEach((point, index) => {
-                    const alpha = (index / trail.length) * CONFIG.rendering.trailOpacity;
-                    state.ctx.globalAlpha = alpha;
-                    state.ctx.fillStyle = color;
-                    state.ctx.beginPath();
-                    state.ctx.arc(point.x, point.y, 1.5, 0, Math.PI * 2);
-                    state.ctx.fill();
-                });
-            },
-
-            drawBody(position, radius, color, isSelected = false) {
-                state.ctx.globalAlpha = 1;
-                
-                if (isSelected) {
-                    state.ctx.shadowColor = color;
-                    state.ctx.shadowBlur = 20;
-                    state.ctx.fillStyle = color;
-                    state.ctx.beginPath();
-                    state.ctx.arc(position.x, position.y, radius + 3, 0, Math.PI * 2);
-                    state.ctx.fill();
-                    state.ctx.shadowBlur = 0;
-                }
-                
-                state.ctx.fillStyle = color;
-                state.ctx.beginPath();
-                state.ctx.arc(position.x, position.y, radius, 0, Math.PI * 2);
-                state.ctx.fill();
-                
-                state.ctx.strokeStyle = isSelected ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.4)';
-                state.ctx.lineWidth = isSelected ? 2 : 1;
-                state.ctx.stroke();
-            },
-
-            clearCanvas() {
-                state.ctx.fillStyle = `rgba(15, 15, 15, ${CONFIG.rendering.canvasFade})`;
-                state.ctx.fillRect(0, 0, state.dimensions.width, state.dimensions.height);
-            },
-
-            renderFrame() {
-                this.updateSpeedRange();
-                this.clearCanvas();
-                state.planets.forEach(planet => planet.render());
-            },
-
-            updateSpeedRange() {
-                const speeds = state.planets.map(planet => planet.speed);
-                if (speeds.length > 0) {
-                    state.speedRange.min = Math.min(...speeds);
-                    state.speedRange.max = Math.max(...speeds);
-                    if (state.speedRange.max === state.speedRange.min) {
-                        state.speedRange.max = state.speedRange.min + 1;
-                    }
-                }
-            }
-        };
-
-        const Physics = {
-            applyGravitationalForces() {
-                for (let i = 0; i < state.planets.length; i++) {
-                    for (let j = i + 1; j < state.planets.length; j++) {
-                        if (!state.interaction.isDragging || 
-                            (state.planets[i] !== state.interaction.selectedPlanet && 
-                             state.planets[j] !== state.interaction.selectedPlanet)) {
-                            state.planets[i].applyGravitationalForce(state.planets[j]);
-                            state.planets[j].applyGravitationalForce(state.planets[i]);
-                        }
-                    }
-                }
-            },
-
-            handleCollisions() {
-                if (state.interaction.isDragging) return false;
-                
-                for (let i = 0; i < state.planets.length; i++) {
-                    for (let j = i + 1; j < state.planets.length; j++) {
-                        if (state.planets[i].isCollidingWith(state.planets[j])) {
-                            const relativeSpeed = state.planets[i].getRelativeSpeed(state.planets[j]);
-                            
-                            if (relativeSpeed > state.settings.fuseSpeed) {
-                                const merged = state.planets[i].mergeWith(state.planets[j]);
-                                state.planets.splice(j, 1);
-                                state.planets.splice(i, 1);
-                                state.planets.push(merged);
-                                return true;
-                            } else {
-                                state.planets[i].bounceOff(state.planets[j]);
-                            }
-                        }
-                    }
+            
+            updateProperty(key, value) {
+                if (key in this && key !== 'id' && key !== 'x' && key !== 'y' && key !== 'startTime') {
+                    this[key] = value;
+                    return true;
                 }
                 return false;
-            },
+            }
+            
+            getDisplayName() {
+                return `Point ${this.id.split('_')[1].slice(-3)}`;
+            }
+        }
 
-            updateBodies() {
-                state.planets.forEach(planet => {
-                    if (planet !== state.interaction.selectedPlanet) {
-                        planet.update();
-                    } else if (state.interaction.isDragging) {
-                        planet.speed = 0;
-                        planet.updateTrail();
-                        planet.radius = planet.calculateRadius();
+        // ===== POINT MANAGER =====
+        class PointManager {
+            constructor() {
+                this.points = new Map();
+                this.selectedId = null;
+            }
+            
+            add(x, y, properties = {}) {
+                const point = new WavePoint(x, y, properties);
+                this.points.set(point.id, point);
+                return point;
+            }
+            
+            remove(id) {
+                if (this.selectedId === id) {
+                    this.selectedId = null;
+                }
+                return this.points.delete(id);
+            }
+            
+            clear() {
+                this.points.clear();
+                this.selectedId = null;
+            }
+            
+            get(id) {
+                return this.points.get(id);
+            }
+            
+            getSelected() {
+                return this.selectedId ? this.points.get(this.selectedId) : null;
+            }
+            
+            select(id) {
+                if (this.points.has(id)) {
+                    if (this.selectedId) {
+                        const prev = this.points.get(this.selectedId);
+                        if (prev) prev.selected = false;
+                    }
+                    
+                    this.selectedId = id;
+                    const point = this.points.get(id);
+                    point.selected = true;
+                    return point;
+                }
+                return null;
+            }
+            
+            deselect() {
+                if (this.selectedId) {
+                    const point = this.points.get(this.selectedId);
+                    if (point) point.selected = false;
+                    this.selectedId = null;
+                }
+            }
+            
+            findPointAt(x, y, editMode = false) {
+                for (const point of this.points.values()) {
+                    if (point.isHit(x, y, editMode)) {
+                        return point;
+                    }
+                }
+                return null;
+            }
+            
+            get count() {
+                return this.points.size;
+            }
+            
+            forEach(callback) {
+                this.points.forEach(callback);
+            }
+            
+            [Symbol.iterator]() {
+                return this.points.values();
+            }
+            
+            getAllPoints() {
+                return Array.from(this.points.values());
+            }
+        }
+
+        // ===== WAVE FIELD RENDERER =====
+        class WaveFieldRenderer {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.skipFactor = CONFIG.performance.levels[CONFIG.performance.default].skip;
+                this.imageData = null;
+                
+                this.resize();
+            }
+            
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                this.imageData = this.ctx.createImageData(this.canvas.width, this.canvas.height);
+            }
+            
+            setPerformanceLevel(level) {
+                if (level >= 0 && level < CONFIG.performance.levels.length) {
+                    this.skipFactor = CONFIG.performance.levels[level].skip;
+                }
+            }
+            
+            render(points, mediumFade, time) {
+                this.clearCanvas();
+                if (points.count > 0) {
+                    this.renderWaveField(points, mediumFade, time);
+                }
+                this.ctx.putImageData(this.imageData, 0, 0);
+            }
+            
+            clearCanvas() {
+                const data = this.imageData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = data[i + 1] = data[i + 2] = 0;
+                    data[i + 3] = 255;
+                }
+            }
+            
+            renderWaveField(points, mediumFade, time) {
+                const { width, height } = this.canvas;
+                
+                for (let y = 0; y < height; y += this.skipFactor) {
+                    for (let x = 0; x < width; x += this.skipFactor) {
+                        const intensity = this.calculatePixelIntensity(x, y, points, mediumFade, time);
+                        this.fillPixelBlock(x, y, intensity);
+                    }
+                }
+            }
+            
+            calculatePixelIntensity(x, y, points, mediumFade, time) {
+                let totalWave = 0;
+                
+                for (const point of points) {
+                    const age = point.getAge(time);
+                    if (age < 0) continue;
+                    
+                    const distance = point.distanceTo(x, y);
+                    const phase = point.frequency * distance - point.speed * age;
+                    
+                    let waveValue = point.waveType === 'sine' 
+                        ? WaveMath.sine(phase, point.strength)
+                        : WaveMath.step(phase, point.strength);
+                    
+                    waveValue = WaveMath.applyFade(waveValue, distance, mediumFade);
+                    totalWave += waveValue;
+                }
+                
+                return WaveMath.toIntensity(totalWave);
+            }
+            
+            fillPixelBlock(startX, startY, intensity) {
+                const data = this.imageData.data;
+                const { width, height } = this.canvas;
+                
+                for (let dy = 0; dy < this.skipFactor; dy++) {
+                    for (let dx = 0; dx < this.skipFactor; dx++) {
+                        const x = startX + dx;
+                        const y = startY + dy;
+                        
+                        if (x < width && y < height) {
+                            const index = (y * width + x) * 4;
+                            data[index] = data[index + 1] = data[index + 2] = intensity;
+                        }
+                    }
+                }
+            }
+        }
+
+        // ===== POINT RENDERER =====
+        class PointRenderer {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+            }
+            
+            render(points, showPoints) {
+                const selected = points.getSelected();
+                
+                if (!showPoints) {
+                    // Only show selected point when points are hidden
+                    if (selected) {
+                        this.drawPoint(selected, true);
+                    }
+                } else {
+                    // Show all points when visibility is enabled
+                    for (const point of points) {
+                        this.drawPoint(point, point.selected);
+                    }
+                }
+            }
+            
+            drawPoint(point, isSelected) {
+                const radius = CONFIG.interaction.visualRadius;
+                const ringRadius = CONFIG.interaction.pointRadius;
+                
+                if (isSelected) {
+                    // Draw selection ring
+                    this.ctx.strokeStyle = '#00ff88';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.arc(point.x, point.y, ringRadius, 0, 2 * Math.PI);
+                    this.ctx.stroke();
+                    
+                    this.ctx.fillStyle = '#00ff88';
+                } else {
+                    this.ctx.fillStyle = '#ff4444';
+                }
+                
+                // Draw point
+                this.ctx.beginPath();
+                this.ctx.arc(point.x, point.y, radius, 0, 2 * Math.PI);
+                this.ctx.fill();
+            }
+        }
+
+        // ===== COMPOSITE RENDERER =====
+        class CompositeRenderer {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.waveFieldRenderer = new WaveFieldRenderer(canvas);
+                this.pointRenderer = new PointRenderer(canvas);
+            }
+            
+            resize() {
+                this.waveFieldRenderer.resize();
+            }
+            
+            setPerformanceLevel(level) {
+                this.waveFieldRenderer.setPerformanceLevel(level);
+            }
+            
+            render(points, mediumFade, time, showPoints) {
+                this.waveFieldRenderer.render(points, mediumFade, time);
+                this.pointRenderer.render(points, showPoints);
+            }
+        }
+
+        // ===== APPLICATION STATE =====
+        class AppState {
+            constructor() {
+                this.time = 0;
+                this.isAnimating = false;
+                this.showPoints = false;
+                this.mediumFade = CONFIG.medium.fade;
+                this.targetFPS = CONFIG.animation.targetFPS;
+                this.frameInterval = 1000 / this.targetFPS;
+                this.lastFrameTime = 0;
+                this.performanceLevel = CONFIG.performance.default;
+                
+                this.listeners = new Map();
+            }
+            
+            on(event, callback) {
+                if (!this.listeners.has(event)) {
+                    this.listeners.set(event, []);
+                }
+                this.listeners.get(event).push(callback);
+            }
+            
+            emit(event, data) {
+                const callbacks = this.listeners.get(event);
+                if (callbacks) {
+                    callbacks.forEach(callback => callback(data));
+                }
+            }
+            
+            setAnimating(value) {
+                if (this.isAnimating !== value) {
+                    this.isAnimating = value;
+                    this.emit('animationChanged', value);
+                }
+            }
+            
+            setShowPoints(value) {
+                if (this.showPoints !== value) {
+                    this.showPoints = value;
+                    this.emit('showPointsChanged', value);
+                }
+            }
+            
+            setFPS(fps) {
+                this.targetFPS = Utils.clamp(fps, CONFIG.animation.minFPS, CONFIG.animation.maxFPS);
+                this.frameInterval = 1000 / this.targetFPS;
+                this.emit('fpsChanged', this.targetFPS);
+            }
+            
+            setPerformanceLevel(level) {
+                if (level >= 0 && level < CONFIG.performance.levels.length) {
+                    this.performanceLevel = level;
+                    this.emit('performanceLevelChanged', level);
+                }
+            }
+            
+            setMediumFade(value) {
+                this.mediumFade = value;
+                this.emit('mediumFadeChanged', value);
+            }
+            
+            incrementTime() {
+                this.time += CONFIG.wave.timeStep;
+                this.emit('timeChanged', this.time);
+            }
+            
+            resetTime() {
+                this.time = 0;
+                this.emit('timeChanged', this.time);
+            }
+            
+            shouldRender(currentTime) {
+                if (!this.isAnimating) return false;
+                return (currentTime - this.lastFrameTime) >= this.frameInterval;
+            }
+            
+            updateFrameTime(currentTime) {
+                this.lastFrameTime = currentTime;
+            }
+        }
+
+        // ===== UI CONTROLLER =====
+        class UIController {
+            constructor() {
+                this.isOpen = false;
+                this.elements = new Map();
+                
+                this.initializeElements();
+                this.setupEventListeners();
+            }
+            
+            initializeElements() {
+                const elementIds = [
+                    'menuToggle', 'panelOverlay', 'controlPanel', 'clearBtn', 'playPauseBtn', 'syncBtn',
+                    'showPointsBtn', 'pointList', 'selectedPointSection', 
+                    'selectedPointId', 'pointWaveTypeBtn', 'pointStrengthSlider', 'pointFrequencySlider', 
+                    'pointSpeedSlider', 'deletePointBtn', 'pointStrengthValue', 'pointFrequencyValue', 
+                    'pointSpeedValue', 'fadeSlider', 'fadeValue', 'performanceSlider', 'performanceValue', 
+                    'performanceInfo', 'fpsSlider', 'fpsValue', 'stats', 'welcomeOverlay', 'welcomeStartBtn'
+                ];
+                
+                elementIds.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        this.elements.set(id, element);
+                    } else {
+                        console.warn(`Element not found: ${id}`);
                     }
                 });
-            },
-
-            step() {
-                this.applyGravitationalForces();
-                const collisionOccurred = this.handleCollisions();
-                if (!collisionOccurred) {
-                    this.updateBodies();
+            }
+            
+            setupEventListeners() {
+                this.on('menuToggle', 'click', () => this.togglePanel());
+                this.on('panelOverlay', 'click', () => this.closePanel());
+                this.on('welcomeStartBtn', 'click', () => this.hideWelcomeModal());
+                
+                document.addEventListener('keydown', e => {
+                    if (e.key === 'Escape' && this.isOpen) {
+                        this.closePanel();
+                    }
+                });
+            }
+            
+            hideWelcomeModal() {
+                const welcomeOverlay = this.elements.get('welcomeOverlay');
+                if (welcomeOverlay) {
+                    welcomeOverlay.style.display = 'none';
+                }
+                
+                // Trigger initialization of starter point
+                if (this.onWelcomeComplete) {
+                    this.onWelcomeComplete();
                 }
             }
-        };
+            
+            setWelcomeCompleteCallback(callback) {
+                this.onWelcomeComplete = callback;
+            }
+            
+            on(elementId, event, handler) {
+                const element = this.elements.get(elementId);
+                if (element) {
+                    element.addEventListener(event, handler);
+                }
+            }
+            
+            setText(elementId, text) {
+                const element = this.elements.get(elementId);
+                if (element) {
+                    element.textContent = String(text);
+                }
+            }
+            
+            setValue(elementId, value) {
+                const element = this.elements.get(elementId);
+                if (element && 'value' in element) {
+                    element.value = value;
+                }
+            }
+            
+            togglePanel() {
+                this.isOpen ? this.closePanel() : this.openPanel();
+            }
+            
+            openPanel() {
+                this.isOpen = true;
+                this.elements.get('controlPanel')?.classList.add('open');
+                this.elements.get('panelOverlay')?.classList.add('active');
+                this.elements.get('menuToggle')?.classList.add('active');
+            }
+            
+            closePanel() {
+                this.isOpen = false;
+                this.elements.get('controlPanel')?.classList.remove('open');
+                this.elements.get('panelOverlay')?.classList.remove('active');
+                this.elements.get('menuToggle')?.classList.remove('active');
+            }
+            
+            updateStats(count) {
+                this.setText('stats', `Points: ${count}`);
+            }
+            
+            updateEditModeIndicator(isEditMode) {
+                const indicator = this.elements.get('editModeIndicator');
+                if (indicator) {
+                    indicator.classList.toggle('active', isEditMode);
+                }
+            }
+            
+            updatePointList(points) {
+                const listElement = this.elements.get('pointList');
+                if (!listElement) return;
+                
+                if (points.count === 0) {
+                    listElement.innerHTML = '<div class="no-selection">No points created</div>';
+                    return;
+                }
+                
+                const pointsArray = points.getAllPoints();
+                listElement.innerHTML = pointsArray.map(point => 
+                    `<div class="point-item ${point.selected ? 'selected' : ''}" data-id="${point.id}">
+                        ${point.getDisplayName()} - ${point.waveType} (${point.strength})
+                    </div>`
+                ).join('');
+            }
+            
+            updateSelectedPoint(point) {
+                const section = this.elements.get('selectedPointSection');
+                if (!point) {
+                    if (section) section.style.display = 'none';
+                    return;
+                }
+                
+                if (section) section.style.display = 'block';
+                
+                this.setText('selectedPointId', point.getDisplayName());
+                this.setText('pointWaveTypeBtn', point.waveType === 'sine' ? 'Sine' : 'Digital');
+                this.setValue('pointStrengthSlider', point.strength);
+                this.setValue('pointFrequencySlider', point.frequency);
+                this.setValue('pointSpeedSlider', point.speed);
+                this.setText('pointStrengthValue', point.strength);
+                this.setText('pointFrequencyValue', Utils.formatValue(point.frequency, 3));
+                this.setText('pointSpeedValue', Utils.formatValue(point.speed, 1));
+                
+                const waveTypeBtn = this.elements.get('pointWaveTypeBtn');
+                if (waveTypeBtn) {
+                    waveTypeBtn.className = `control-button ${point.waveType === 'sine' ? 'active' : ''}`;
+                }
+            }
+            
+            updateButtonState(elementId, isActive, activeText, inactiveText) {
+                const btn = this.elements.get(elementId);
+                if (btn) {
+                    btn.classList.toggle('active', isActive);
+                    btn.textContent = isActive ? activeText : inactiveText;
+                }
+            }
+            
+            updateEditModeButton(isEditMode) {
+                const btn = this.elements.get('editPointsBtn');
+                if (btn) {
+                    btn.classList.toggle('edit-mode', isEditMode);
+                    btn.textContent = isEditMode ? 'Exit Edit' : 'Edit Points';
+                }
+            }
+            
+            updatePerformanceInfo(level) {
+                if (level < 0 || level >= CONFIG.performance.levels.length) return;
+                
+                const config = CONFIG.performance.levels[level];
+                this.setText('performanceValue', config.label);
+                
+                const width = Math.floor(window.innerWidth / config.skip);
+                const height = Math.floor(window.innerHeight / config.skip);
+                const speedup = config.skip === 1 ? '' : ` (${config.skip ** 2}x faster)`;
+                
+                this.setText('performanceInfo', `Resolution: ${width}×${height}${speedup}`);
+            }
+        }
 
-        const Controls = {
-            controlMappings: [
-                { id: 'planetCount', formatter: v => v.toString() },
-                { id: 'speed', formatter: v => v.toFixed(1) },
-                { id: 'gravity', formatter: v => v.toString() },
-                { id: 'trails', formatter: v => v.toString() },
-                { id: 'fuseSpeed', formatter: v => v.toFixed(1) },
-                { id: 'planetSize', formatter: v => v.toFixed(2) },
-                { id: 'bounciness', formatter: v => v.toFixed(2) }
-            ],
-
-            initialize() {
-                this.bindControls();
-            },
-
-            bindControls() {
-                this.controlMappings.forEach(control => {
-                    const slider = document.getElementById(control.id);
-                    const display = document.getElementById(control.id + 'Value');
+        // ===== INTERACTION MANAGER =====
+        class InteractionManager {
+            constructor(canvas, appState) {
+                this.canvas = canvas;
+                this.appState = appState;
+                
+                this.isDragging = false;
+                this.dragPoint = null;
+                
+                // Double-click/tap detection
+                this.lastClickTime = 0;
+                this.lastClickPos = { x: 0, y: 0 };
+                this.doubleClickThreshold = 400; // milliseconds
+                this.clickMoveThreshold = 10; // pixels
+                
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                this.canvas.addEventListener('touchstart', (e) => this.handleStart(e, e.touches[0]));
+                this.canvas.addEventListener('touchmove', (e) => this.handleMove(e, e.touches[0]));
+                this.canvas.addEventListener('touchend', (e) => this.handleEnd(e));
+                
+                this.canvas.addEventListener('mousedown', (e) => this.handleStart(e, e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMove(e, e));
+                this.canvas.addEventListener('mouseup', (e) => this.handleEnd(e));
+                
+                // Prevent default double-tap zoom on mobile
+                this.canvas.addEventListener('touchend', (e) => {
+                    if (e.touches.length === 0) {
+                        e.preventDefault();
+                    }
+                });
+                
+                this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+            
+            getCoordinates(pointer) {
+                const rect = this.canvas.getBoundingClientRect();
+                return {
+                    x: Math.floor(pointer.clientX - rect.left),
+                    y: Math.floor(pointer.clientY - rect.top)
+                };
+            }
+            
+            isDoubleClick(x, y, currentTime) {
+                const timeDiff = currentTime - this.lastClickTime;
+                const distanceDiff = Math.sqrt(
+                    Math.pow(x - this.lastClickPos.x, 2) + 
+                    Math.pow(y - this.lastClickPos.y, 2)
+                );
+                
+                return timeDiff < this.doubleClickThreshold && 
+                       distanceDiff < this.clickMoveThreshold;
+            }
+            
+            handleStart(event, pointer) {
+                event.preventDefault();
+                const { x, y } = this.getCoordinates(pointer);
+                const currentTime = Date.now();
+                
+                // Check if we're hitting a point
+                const hitPoint = this.simulation.points.findPointAt(x, y, false);
+                const isDouble = this.isDoubleClick(x, y, currentTime);
+                
+                if (hitPoint) {
+                    // Clicked on existing point: select and prepare for dragging
+                    this.simulation.points.select(hitPoint.id);
+                    this.simulation.updateUI();
                     
-                    slider.addEventListener('input', (event) => {
-                        this.handleControlChange(control, parseFloat(event.target.value), display);
-                    });
-                });
-            },
-
-            handleControlChange(control, value, display) {
-                display.textContent = control.formatter(value);
-                state.settings[control.id] = value;
-
-                if (control.id === 'planetCount') {
-                    Simulation.randomStart();
-                } else if (control.id === 'planetSize') {
-                    this.updatePlanetSizes();
+                    // Prepare for potential drag
+                    this.isDragging = true;
+                    this.dragPoint = hitPoint;
+                    this.canvas.style.cursor = 'grabbing';
+                } else if (isDouble) {
+                    // Double click on empty space: create new point
+                    this.simulation.addWavePoint(x, y);
+                } else {
+                    // Single click on empty space: deselect current point
+                    this.simulation.points.deselect();
+                    this.simulation.updateUI();
                 }
-            },
-
-            updatePlanetSizes() {
-                state.planets.forEach(planet => {
-                    planet.radius = planet.calculateRadius();
-                });
-            },
-
-            toggle() {
-                const panel = document.getElementById('controlPanel');
-                const button = document.querySelector('.toggle-btn');
                 
-                panel.classList.toggle('hidden');
-                button.textContent = panel.classList.contains('hidden') ? 'Show Controls' : 'Hide Controls';
+                // Update click tracking
+                this.lastClickTime = currentTime;
+                this.lastClickPos = { x, y };
             }
-        };
+            
+            handleMove(event, pointer) {
+                if (!this.isDragging || !this.dragPoint) return;
+                
+                event.preventDefault();
+                const { x, y } = this.getCoordinates(pointer);
+                
+                this.dragPoint.x = x;
+                this.dragPoint.y = y;
+                
+                this.simulation.render();
+            }
+            
+            handleEnd(event) {
+                if (this.isDragging) {
+                    event.preventDefault();
+                    this.isDragging = false;
+                    this.dragPoint = null;
+                    this.canvas.style.cursor = 'crosshair';
+                }
+            }
+            
+            cleanup() {
+                this.isDragging = false;
+                this.dragPoint = null;
+                this.canvas.style.cursor = 'crosshair';
+                
+                // Reset click tracking
+                this.lastClickTime = 0;
+                this.lastClickPos = { x: 0, y: 0 };
+            }
+            
+            setSimulation(simulation) {
+                this.simulation = simulation;
+            }
+        }
 
-        const Simulation = {
+        // ===== MAIN APPLICATION =====
+        class WaveSimulation {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                if (!this.canvas) {
+                    throw new Error('Canvas element not found');
+                }
+                
+                this.appState = new AppState();
+                this.renderer = new CompositeRenderer(this.canvas);
+                this.points = new PointManager();
+                this.ui = new UIController();
+                this.interaction = new InteractionManager(this.canvas, this.appState);
+                
+                this.animationId = null;
+                
+                this.initialize();
+            }
+            
             initialize() {
-                Canvas.initialize();
-                Controls.initialize();
-                this.randomStart();
-                this.startAnimationLoop();
-            },
-
-            randomStart() {
-                this.stop();
-                state.planets = this.generateRandomPlanets();
-                this.startAnimationLoop();
-            },
-
-            bigBangStart() {
-                this.stop();
-                state.planets = this.generateBigBangPlanets();
-                this.startAnimationLoop();
-            },
-
-            generateRandomPlanets() {
-                return Array.from({ length: state.settings.planetCount }, () => 
-                    Body.createRandom(state.dimensions)
-                );
-            },
-
-            generateBigBangPlanets() {
-                const center = Vector.create(
-                    state.dimensions.width / 2,
-                    state.dimensions.height / 2
-                );
-                const totalMass = state.settings.planetCount * 40;
-                const explosionStrength = CONFIG.bigBang.explosionStrengthRange.min + 
-                    Math.random() * (CONFIG.bigBang.explosionStrengthRange.max - CONFIG.bigBang.explosionStrengthRange.min);
+                this.interaction.setSimulation(this);
+                this.ui.setWelcomeCompleteCallback(() => this.initializeStarterPoint());
+                this.setupControlHandlers();
+                this.setupStateListeners();
+                this.setupWindowEvents();
+                this.updateUI();
                 
-                return Array.from({ length: state.settings.planetCount }, (_, index) => 
-                    Body.createForBigBang(center, index, state.settings.planetCount, explosionStrength, totalMass)
-                );
-            },
-
-            stop() {
-                if (state.animationId) {
-                    cancelAnimationFrame(state.animationId);
-                }
-            },
-
-            startAnimationLoop() {
-                this.animate();
-            },
-
-            animate() {
-                Physics.step();
-                Renderer.renderFrame();
-                state.animationId = requestAnimationFrame(() => this.animate());
+                console.log('Wave simulation initialized - welcome modal shown');
             }
-        };
+            
+            initializeStarterPoint() {
+                // Create a point in the center of the screen
+                const centerX = Math.floor(window.innerWidth / 2);
+                const centerY = Math.floor(window.innerHeight / 2);
+                
+                const point = this.points.add(centerX, centerY, {
+                    strength: CONFIG.defaults.strength,
+                    frequency: CONFIG.defaults.frequency,
+                    speed: CONFIG.defaults.speed,
+                    waveType: CONFIG.defaults.waveType
+                });
+                
+                // Set start time and select the point
+                point.setStartTime(0);
+                this.points.select(point.id);
+                
+                // Update UI and start animation
+                this.updateUI();
+                this.startAnimation();
+                
+                console.log('Starter wave point created at center');
+            }
+            
+            setupStateListeners() {
+                this.appState.on('animationChanged', (isAnimating) => {
+                    this.ui.updateButtonState('playPauseBtn', !isAnimating, 'Play', 'Pause');
+                });
+                
+                this.appState.on('showPointsChanged', (showPoints) => {
+                    this.ui.updateButtonState('showPointsBtn', showPoints, 'Hide Points', 'Show Points');
+                    this.render();
+                });
+                
+                this.appState.on('performanceLevelChanged', (level) => {
+                    this.renderer.setPerformanceLevel(level);
+                    this.ui.updatePerformanceInfo(level);
+                });
+                
+                this.appState.on('fpsChanged', (fps) => {
+                    this.ui.setText('fpsValue', `${fps} FPS`);
+                });
+                
+                this.appState.on('mediumFadeChanged', (fade) => {
+                    this.ui.setText('fadeValue', Utils.formatValue(fade, 3));
+                    this.ui.setValue('fadeSlider', fade);
+                });
+            }
+            
+            setupControlHandlers() {
+                this.ui.on('clearBtn', 'click', () => this.clearAll());
+                this.ui.on('playPauseBtn', 'click', () => this.toggleAnimation());
+                this.ui.on('syncBtn', 'click', () => this.syncPoints());
+                this.ui.on('showPointsBtn', 'click', () => this.togglePointVisibility());
+                
+                this.ui.on('pointList', 'click', (e) => {
+                    const pointItem = e.target.closest('.point-item');
+                    if (pointItem) {
+                        const pointId = pointItem.dataset.id;
+                        this.points.select(pointId);
+                        this.updateUI();
+                    }
+                });
+                
+                this.ui.on('pointWaveTypeBtn', 'click', () => this.toggleSelectedPointWaveType());
+                this.ui.on('deletePointBtn', 'click', () => this.deleteSelectedPoint());
+                
+                this.ui.on('pointStrengthSlider', 'input', (e) => {
+                    this.updateSelectedPointProperty('strength', parseInt(e.target.value));
+                });
+                this.ui.on('pointFrequencySlider', 'input', (e) => {
+                    this.updateSelectedPointProperty('frequency', parseFloat(e.target.value));
+                });
+                this.ui.on('pointSpeedSlider', 'input', (e) => {
+                    this.updateSelectedPointProperty('speed', parseFloat(e.target.value));
+                });
+                
+                this.ui.on('fadeSlider', 'input', (e) => {
+                    this.appState.setMediumFade(parseFloat(e.target.value));
+                });
+                
+                this.ui.on('performanceSlider', 'input', (e) => {
+                    this.appState.setPerformanceLevel(parseInt(e.target.value));
+                });
+                
+                this.ui.on('fpsSlider', 'input', (e) => {
+                    this.appState.setFPS(parseInt(e.target.value));
+                });
+            }
+            
+            setupWindowEvents() {
+                window.addEventListener('resize', () => {
+                    this.renderer.resize();
+                    this.ui.updatePerformanceInfo(this.appState.performanceLevel);
+                });
+                
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Delete' || e.key === 'Backspace') {
+                        const selected = this.points.getSelected();
+                        if (selected) {
+                            e.preventDefault();
+                            this.deleteSelectedPoint();
+                        }
+                    }
+                });
+            }
+            
+            addWavePoint(x, y) {
+                const point = this.points.add(x, y, {
+                    strength: CONFIG.defaults.strength,
+                    frequency: CONFIG.defaults.frequency,
+                    speed: CONFIG.defaults.speed,
+                    waveType: CONFIG.defaults.waveType
+                });
+                
+                point.setStartTime(this.appState.time);
+                this.points.select(point.id);
+                this.updateUI();
+                
+                if (!this.appState.isAnimating) {
+                    this.startAnimation();
+                }
+            }
+            
+            togglePointVisibility() {
+                this.appState.setShowPoints(!this.appState.showPoints);
+            }
+            
+            syncPoints() {
+                if (this.points.count === 0) return;
+                
+                // Reset simulation time to zero
+                this.appState.resetTime();
+                
+                // Synchronize all points to start at time zero
+                for (const point of this.points) {
+                    point.setStartTime(0);
+                }
+                
+                // Restart animation if we have points
+                if (!this.appState.isAnimating) {
+                    this.startAnimation();
+                }
+                
+                console.log(`Synchronized ${this.points.count} wave points`);
+            }
+            
+            resetAllPointTimes() {
+                this.appState.resetTime();
+                for (const point of this.points) {
+                    point.setStartTime(0);
+                }
+            }
+            
+            updateSelectedPointProperty(property, value) {
+                const selected = this.points.getSelected();
+                if (selected && selected.updateProperty(property, value)) {
+                    this.ui.updateSelectedPoint(selected);
+                    this.ui.updatePointList(this.points);
+                }
+            }
+            
+            toggleSelectedPointWaveType() {
+                const selected = this.points.getSelected();
+                if (selected) {
+                    selected.waveType = selected.waveType === 'sine' ? 'step' : 'sine';
+                    this.ui.updateSelectedPoint(selected);
+                    this.ui.updatePointList(this.points);
+                }
+            }
+            
+            deleteSelectedPoint() {
+                const selected = this.points.getSelected();
+                if (selected) {
+                    this.points.remove(selected.id);
+                    this.updateUI();
+                    
+                    if (this.points.count === 0) {
+                        this.stopAnimation();
+                    }
+                }
+            }
+            
+            updateUI() {
+                this.ui.updateStats(this.points.count);
+                this.ui.updatePointList(this.points);
+                this.ui.updateSelectedPoint(this.points.getSelected());
+            }
+            
+            startAnimation() {
+                this.appState.setAnimating(true);
+                this.animate();
+            }
+            
+            stopAnimation() {
+                this.appState.setAnimating(false);
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                    this.animationId = null;
+                }
+            }
+            
+            toggleAnimation() {
+                if (this.appState.isAnimating) {
+                    this.stopAnimation();
+                } else if (this.points.count > 0) {
+                    this.startAnimation();
+                }
+            }
+            
+            animate() {
+                const currentTime = performance.now();
+                
+                if (this.appState.shouldRender(currentTime)) {
+                    this.appState.incrementTime();
+                    this.render();
+                    this.appState.updateFrameTime(currentTime);
+                }
+                
+                if (this.appState.isAnimating) {
+                    this.animationId = requestAnimationFrame(() => this.animate());
+                }
+            }
+            
+            render() {
+                this.renderer.render(
+                    this.points, 
+                    this.appState.mediumFade, 
+                    this.appState.time,
+                    this.appState.showPoints
+                );
+            }
+            
+            clearAll() {
+                this.points.clear();
+                this.appState.resetTime();
+                this.appState.setShowPoints(false);
+                this.stopAnimation();
+                
+                this.interaction.cleanup();
+                this.render();
+                this.updateUI();
+            }
+        }
 
-        window.addEventListener('load', () => Simulation.initialize());
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                new WaveSimulation();
+            } catch (error) {
+                console.error('Failed to initialize wave simulation:', error);
+                
+                document.body.innerHTML = `
+                    <div style="
+                        display: flex; 
+                        align-items: center; 
+                        justify-content: center; 
+                        height: 100vh; 
+                        color: white; 
+                        text-align: center;
+                        font-family: monospace;
+                    ">
+                        <div>
+                            <h2>Wave Simulation Error</h2>
+                            <p>Failed to initialize application</p>
+                            <p style="font-size: 12px; opacity: 0.7;">Check console for details</p>
+                        </div>
+                    </div>
+                `;
+            }
+        });
     </script>
 </body>
 </html>
