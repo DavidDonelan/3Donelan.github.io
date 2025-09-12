@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Wave Simulation - Point Editor</title>
+<title>Wave Simulation - Advanced Pattern Editor</title>
 <style>
 :root {
     /* Colors */
@@ -237,9 +237,27 @@ body {
     opacity: 0.9;
 }
 
+.subsection {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.subsection-title {
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: var(--spacing-sm);
+    opacity: 0.8;
+}
+
 /* Form Controls */
 .control-group {
     margin-bottom: var(--spacing-lg);
+}
+
+.control-group.compact {
+    margin-bottom: var(--spacing-sm);
 }
 
 .control-label {
@@ -284,6 +302,10 @@ body {
     -webkit-appearance: none;
 }
 
+.slider.mini {
+    height: 4px;
+}
+
 .slider::-webkit-slider-thumb {
     appearance: none;
     -webkit-appearance: none;
@@ -293,6 +315,11 @@ body {
     border-radius: 50%;
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.slider.mini::-webkit-slider-thumb {
+    width: 16px;
+    height: 16px;
 }
 
 .slider::-moz-range-thumb {
@@ -305,6 +332,11 @@ body {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
+.slider.mini::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+}
+
 .slider-value {
     position: absolute;
     right: 0;
@@ -315,6 +347,12 @@ body {
     border-radius: 3px;
     min-width: 35px;
     text-align: center;
+}
+
+.slider-value.inline {
+    position: static;
+    display: inline-block;
+    margin-left: 8px;
 }
 
 /* Buttons */
@@ -335,6 +373,12 @@ body {
     font-size: 13px;
     cursor: pointer;
     transition: var(--transition-fast);
+}
+
+.control-button.mini {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-width: 60px;
 }
 
 .control-button:hover {
@@ -599,7 +643,7 @@ body {
     <div class="welcome-modal">
         <div class="welcome-header">
             <h2>Wave Physics Simulation</h2>
-            <p>Interactive wave interference patterns</p>
+            <p>Advanced pattern generation & wave control</p>
         </div>
         <div class="welcome-content">
             <div class="instruction-list">
@@ -607,13 +651,13 @@ body {
                     <strong>Create waves:</strong> Press and hold on empty space to add wave sources
                 </div>
                 <div class="instruction-item">
-                    <strong>Generate patterns:</strong> Use Pattern Generator for mathematical layouts
+                    <strong>Generate patterns:</strong> Create mathematical layouts with custom wave properties
                 </div>
                 <div class="instruction-item">
-                    <strong>Manipulate:</strong> Select, move, clone, and customize wave points
+                    <strong>Global control:</strong> Adjust phase shift and time scale for all waves
                 </div>
                 <div class="instruction-item">
-                    <strong>Visualize:</strong> Watch interference patterns form in real-time
+                    <strong>Fine-tune:</strong> Select and modify individual points after generation
                 </div>
             </div>
         </div>
@@ -636,8 +680,8 @@ body {
 <div class="panel-overlay" id="panelOverlay"></div>
 <div class="control-panel" id="controlPanel">
     <div class="panel-header">
-        <div class="panel-title">Wave Point Editor</div>
-        <div class="panel-subtitle">Press and hold on canvas to add points</div>
+        <div class="panel-title">Wave Pattern Editor</div>
+        <div class="panel-subtitle">Advanced wave interference control</div>
     </div>
     
     <!-- Animation Controls -->
@@ -658,6 +702,7 @@ body {
     <!-- Pattern Generator -->
     <div class="control-section">
         <div class="section-title">Pattern Generator</div>
+        
         <div class="control-group">
             <label class="control-label">Pattern Type</label>
             <select id="patternType" class="select-input">
@@ -667,17 +712,91 @@ body {
                 <option value="sunflower">Sunflower</option>
             </select>
         </div>
+        
         <div class="control-group">
-            <label class="control-label">Number of Points</label>
+            <label class="control-label">Point Count</label>
             <div class="slider-container">
                 <input type="range" class="slider" id="patternCount" min="4" max="36" step="1" value="16">
                 <div class="slider-value" id="patternCountValue">16</div>
             </div>
         </div>
-        <div class="button-group">
+        
+        <div class="control-group">
+            <label class="control-label">Pattern Scale</label>
+            <div class="slider-container">
+                <input type="range" class="slider" id="patternScale" min="0.3" max="2.0" step="0.1" value="1.0">
+                <div class="slider-value" id="patternScaleValue">1.0×</div>
+            </div>
+            <div class="info-text" id="scaleInfo">Normal size</div>
+        </div>
+        
+        <!-- Wave Template -->
+        <div class="subsection">
+            <div class="subsection-title">Wave Template</div>
+            
+            <div class="control-group compact">
+                <label class="control-label">Strength</label>
+                <div class="slider-container">
+                    <input type="range" class="slider mini" id="templateStrength" min="10" max="100" step="5" value="60">
+                    <span class="slider-value inline" id="templateStrengthValue">60</span>
+                </div>
+            </div>
+            
+            <div class="control-group compact">
+                <label class="control-label">Frequency</label>
+                <div class="slider-container">
+                    <input type="range" class="slider mini" id="templateFrequency" min="0.005" max="0.08" step="0.005" value="0.02">
+                    <span class="slider-value inline" id="templateFrequencyValue">0.020</span>
+                </div>
+            </div>
+            
+            <div class="control-group compact">
+                <label class="control-label">Speed</label>
+                <div class="slider-container">
+                    <input type="range" class="slider mini" id="templateSpeed" min="0.1" max="1.0" step="0.1" value="1.0">
+                    <span class="slider-value inline" id="templateSpeedValue">1.0</span>
+                </div>
+            </div>
+            
+            <div class="control-group compact">
+                <label class="control-label">Wave Type</label>
+                <div class="button-group">
+                    <button class="control-button mini active" id="templateWaveType">Sine</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="button-group" style="margin-top: 15px;">
             <button class="control-button pattern" id="generatePatternBtn">Generate Pattern</button>
         </div>
-        <div class="info-text">Replaces existing points</div>
+        <div class="info-text">Replaces existing points with pattern</div>
+    </div>
+    
+    <!-- Global Wave Control -->
+    <div class="control-section">
+        <div class="section-title">Global Wave Control</div>
+        
+        <div class="control-group">
+            <label class="control-label">Phase Shift</label>
+            <div class="slider-container">
+                <input type="range" class="slider" id="phaseShift" min="-3.14159" max="3.14159" step="0.1" value="0">
+                <div class="slider-value" id="phaseShiftValue">0.00</div>
+            </div>
+            <div class="info-text" id="phaseInfo">0° phase offset</div>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">Time Scale</label>
+            <div class="slider-container">
+                <input type="range" class="slider" id="timeScale" min="0.25" max="2.0" step="0.05" value="1.0">
+                <div class="slider-value" id="timeScaleValue">1.0×</div>
+            </div>
+            <div class="info-text" id="timeInfo">Normal speed</div>
+        </div>
+        
+        <div class="button-group">
+            <button class="control-button" id="resetGlobalBtn">Reset Global</button>
+        </div>
     </div>
     
     <!-- Point List -->
@@ -813,6 +932,7 @@ body {
 </div>
 
 <script>
+
 'use strict';
 
 // ===== CONFIGURATION =====
@@ -879,7 +999,9 @@ const Utils = {
     math: {
         clamp: (val, min, max) => Math.max(min, Math.min(max, val)),
         distance: (x1, y1, x2, y2) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2),
-        formatValue: (val, decimals = 3) => Number(val).toFixed(decimals)
+        formatValue: (val, decimals = 3) => Number(val).toFixed(decimals),
+        radToDeg: (rad) => (rad * 180 / Math.PI).toFixed(0),
+        degToRad: (deg) => deg * Math.PI / 180
     },
     
     id: {
@@ -935,6 +1057,26 @@ const Utils = {
                 g: Math.round((g + m) * 255),
                 b: Math.round((b + m) * 255)
             };
+        }
+    },
+    
+    storage: {
+        save: (key, value) => {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+            } catch (e) {
+                console.warn('Failed to save to localStorage:', e);
+            }
+        },
+        
+        load: (key, defaultValue = null) => {
+            try {
+                const item = localStorage.getItem(key);
+                return item ? JSON.parse(item) : defaultValue;
+            } catch (e) {
+                console.warn('Failed to load from localStorage:', e);
+                return defaultValue;
+            }
         }
     }
 };
@@ -1048,10 +1190,10 @@ const WaveMath = {
 // ===== PATTERN GENERATOR =====
 const PatternGenerator = {
     patterns: {
-        grid(count, cx, cy, maxRadius) {
+        grid(count, cx, cy, maxRadius, scale) {
             const points = [];
             const gridSize = Math.ceil(Math.sqrt(count));
-            const spacing = (maxRadius * 2) / (gridSize + 1);
+            const spacing = (maxRadius * 2 / (gridSize + 1)) * scale;
             const startX = cx - (gridSize - 1) * spacing / 2;
             const startY = cy - (gridSize - 1) * spacing / 2;
             
@@ -1066,13 +1208,13 @@ const PatternGenerator = {
             return points;
         },
         
-        radial(count, cx, cy, maxRadius) {
+        radial(count, cx, cy, maxRadius, scale) {
             const points = [];
             const rings = Math.min(4, Math.ceil(count / 8));
             const pointsPerRing = Math.ceil(count / rings);
             
             for (let ring = 0; ring < rings; ring++) {
-                const radius = ((ring + 1) / rings) * maxRadius;
+                const radius = ((ring + 1) / rings) * maxRadius * scale;
                 const ringCount = Math.min(pointsPerRing, count - points.length);
                 
                 for (let i = 0; i < ringCount; i++) {
@@ -1086,13 +1228,13 @@ const PatternGenerator = {
             return points;
         },
         
-        spiral(count, cx, cy, maxRadius) {
+        spiral(count, cx, cy, maxRadius, scale) {
             const points = [];
             const maxAngle = 4 * Math.PI;
             
             for (let i = 0; i < count; i++) {
                 const t = (i / count) * maxAngle;
-                const radius = (t / maxAngle) * maxRadius;
+                const radius = (t / maxAngle) * maxRadius * scale;
                 points.push({
                     x: cx + radius * Math.cos(t),
                     y: cy + radius * Math.sin(t)
@@ -1101,13 +1243,13 @@ const PatternGenerator = {
             return points;
         },
         
-        sunflower(count, cx, cy, maxRadius) {
+        sunflower(count, cx, cy, maxRadius, scale) {
             const points = [];
             const golden = Math.PI * (3 - Math.sqrt(5));
             
             for (let i = 0; i < count; i++) {
                 const theta = i * golden;
-                const radius = Math.sqrt(i / count) * maxRadius;
+                const radius = Math.sqrt(i / count) * maxRadius * scale;
                 points.push({
                     x: cx + radius * Math.cos(theta),
                     y: cy + radius * Math.sin(theta)
@@ -1117,13 +1259,13 @@ const PatternGenerator = {
         }
     },
     
-    generate(type, count, bounds) {
+    generate(type, count, bounds, scale = 1.0) {
         const cx = bounds.width / 2;
         const cy = bounds.height / 2;
         const maxRadius = Math.min(bounds.width, bounds.height) / 2 - CONFIG.interaction.patternMargin;
         
         const generator = this.patterns[type];
-        return generator ? generator(count, cx, cy, maxRadius) : [];
+        return generator ? generator(count, cx, cy, maxRadius, scale) : [];
     }
 };
 
@@ -1280,6 +1422,10 @@ class PointManager extends EventEmitter {
 class AppState extends EventEmitter {
     constructor() {
         super();
+        
+        // Load saved template or use defaults
+        const savedTemplate = Utils.storage.load('waveTemplate', CONFIG.wave.defaults);
+        
         this.state = {
             time: 0,
             isAnimating: false,
@@ -1287,6 +1433,10 @@ class AppState extends EventEmitter {
             animatePoints: false,
             mediumFade: CONFIG.medium.fade,
             performanceLevel: CONFIG.performance.default,
+            phaseShift: 0,
+            timeScale: 1.0,
+            patternScale: 1.0,
+            patternTemplate: savedTemplate,
             ...CONFIG.colors
         };
         
@@ -1301,11 +1451,20 @@ class AppState extends EventEmitter {
         if (this.state[key] !== value) {
             this.state[key] = value;
             this.emit('change', { key, value });
+            
+            // Save template when it changes
+            if (key === 'patternTemplate') {
+                Utils.storage.save('waveTemplate', value);
+            }
         }
     }
     
     get(key) {
         return this.state[key];
+    }
+    
+    setTemplate(properties) {
+        this.set('patternTemplate', { ...this.state.patternTemplate, ...properties });
     }
     
     setFPS(fps) {
@@ -1317,7 +1476,8 @@ class AppState extends EventEmitter {
     }
     
     incrementTime() {
-        this.state.time += CONFIG.wave.timeStep;
+        // Apply time scale to time increment
+        this.state.time += CONFIG.wave.timeStep * this.state.timeScale;
     }
     
     resetTime() {
@@ -1359,10 +1519,10 @@ class WaveFieldRenderer {
         this.skipFactor = CONFIG.performance.levels[level].skip;
     }
     
-    render(points, mediumFade, time, colorSettings) {
+    render(points, mediumFade, time, phaseShift, colorSettings) {
         this.clearCanvas();
         if (points.count > 0) {
-            this.renderWaveField(points, mediumFade, time, colorSettings);
+            this.renderWaveField(points, mediumFade, time, phaseShift, colorSettings);
         }
         this.ctx.putImageData(this.imageData, 0, 0);
     }
@@ -1375,19 +1535,19 @@ class WaveFieldRenderer {
         }
     }
     
-    renderWaveField(points, mediumFade, time, colorSettings) {
+    renderWaveField(points, mediumFade, time, phaseShift, colorSettings) {
         const { width, height } = this.canvas;
         const skip = this.skipFactor;
         
         for (let y = 0; y < height; y += skip) {
             for (let x = 0; x < width; x += skip) {
-                const color = this.calculatePixel(x, y, points, mediumFade, time, colorSettings);
+                const color = this.calculatePixel(x, y, points, mediumFade, time, phaseShift, colorSettings);
                 this.fillBlock(x, y, color, skip);
             }
         }
     }
     
-    calculatePixel(x, y, points, mediumFade, time, colorSettings) {
+    calculatePixel(x, y, points, mediumFade, time, phaseShift, colorSettings) {
         let totalWave = 0;
         
         for (const point of points) {
@@ -1395,7 +1555,8 @@ class WaveFieldRenderer {
             if (age < 0) continue;
             
             const distance = point.distanceTo(x, y);
-            const phase = point.frequency * distance - point.speed * age;
+            // Apply phase shift to the wave calculation
+            const phase = point.frequency * distance - point.speed * age + phaseShift;
             
             const waveFunc = point.waveType === 'sine' ? WaveMath.sine : WaveMath.step;
             let waveValue = waveFunc(phase, point.strength);
@@ -1479,19 +1640,36 @@ class UIController {
     
     cacheElements() {
         const ids = [
+            // Core elements
             'menuToggle', 'panelOverlay', 'controlPanel', 'welcomeOverlay', 'welcomeStartBtn',
-            'clearBtn', 'playPauseBtn', 'syncBtn', 'showPointsBtn', 'animatePointsBtn',
+            // Animation controls
+            'clearBtn', 'playPauseBtn', 'syncBtn', 'showPointsBtn', 'animatePointsBtn', 'stats',
+            // Pattern generator
+            'patternType', 'patternCount', 'patternCountValue', 'patternScale', 'patternScaleValue',
+            'scaleInfo', 'generatePatternBtn',
+            // Wave template
+            'templateStrength', 'templateStrengthValue', 'templateFrequency', 'templateFrequencyValue',
+            'templateSpeed', 'templateSpeedValue', 'templateWaveType',
+            // Global wave control
+            'phaseShift', 'phaseShiftValue', 'phaseInfo', 'timeScale', 'timeScaleValue', 'timeInfo',
+            'resetGlobalBtn',
+            // Point list
             'pointList', 'selectedPointSection', 'selectedPointId', 'pointWaveTypeBtn',
             'pointStrength', 'pointFrequency', 'pointSpeed', 'pointVelocity',
-            'clonePointBtn', 'deletePointBtn', 'fadeSlider', 'fadeValue',
-            'performanceSlider', 'performanceValue', 'performanceInfo', 'fpsSlider', 'fpsValue',
-            'stats', 'colorModeBtn', 'hue1Slider', 'hue2Slider', 'hue1Value', 'hue2Value',
+            'clonePointBtn', 'deletePointBtn',
+            // Medium and color
+            'fadeSlider', 'fadeValue', 'colorModeBtn', 
+            'hue1Slider', 'hue2Slider', 'hue1Value', 'hue2Value',
             'complementaryBtn', 'gradientPreview', 'colorControls', 'colorControls2',
-            'colorButtons', 'colorPreview', 'longPressIndicator',
-            'patternType', 'patternCount', 'patternCountValue', 'generatePatternBtn'
+            'colorButtons', 'colorPreview',
+            // Performance
+            'performanceSlider', 'performanceValue', 'performanceInfo', 
+            'fpsSlider', 'fpsValue',
+            // Other
+            'longPressIndicator'
         ];
         
-        // Add value display elements
+        // Add value display elements for point controls
         Object.keys(CONFIG.ui.sliders).forEach(key => {
             ids.push(`${key}Value`);
         });
@@ -1532,613 +1710,7 @@ class UIController {
     
     setValue(elementId, value) {
         const element = this.elements.get(elementId);
-        if (element && 'value' in element) element.value = value;
-    }
-    
-    togglePanel() {
-        this.panelOpen ? this.closePanel() : this.openPanel();
-    }
-    
-    openPanel() {
-        this.panelOpen = true;
-        this.elements.get('controlPanel')?.classList.add('open');
-        this.elements.get('panelOverlay')?.classList.add('active');
-        this.elements.get('menuToggle')?.classList.add('active');
-    }
-    
-    closePanel() {
-        this.panelOpen = false;
-        this.elements.get('controlPanel')?.classList.remove('open');
-        this.elements.get('panelOverlay')?.classList.remove('active');
-        this.elements.get('menuToggle')?.classList.remove('active');
-    }
-    
-    hideWelcome() {
-        const overlay = this.elements.get('welcomeOverlay');
-        if (overlay) overlay.style.display = 'none';
-    }
-    
-    updateButton(elementId, isActive, activeText, inactiveText) {
-        const btn = this.elements.get(elementId);
-        if (btn) {
-            btn.classList.toggle('active', isActive);
-            btn.textContent = isActive ? activeText : inactiveText;
-        }
-    }
-    
-    updateColorControls(useColor) {
-        ['colorControls', 'colorControls2', 'colorButtons', 'colorPreview'].forEach(id => {
-            const element = this.elements.get(id);
-            if (element) element.style.display = useColor ? 'block' : 'none';
-        });
-        this.updateButton('colorModeBtn', !useColor, 'Grayscale', 'Color');
-    }
-    
-    updateColorPreview(hue1, hue2) {
-        const preview = this.elements.get('gradientPreview');
-        if (preview) {
-            preview.style.background = `linear-gradient(to right, hsl(${hue1}, 70%, 50%), hsl(${hue2}, 70%, 50%))`;
-        }
-        this.setText('hue1Value', `${hue1}°`);
-        this.setText('hue2Value', `${hue2}°`);
-    }
-    
-    updatePointList(points) {
-        const list = this.elements.get('pointList');
-        if (!list) return;
-        
-        if (points.count === 0) {
-            list.innerHTML = '<div class="empty-state">No points created</div>';
-            return;
-        }
-        
-        list.innerHTML = points.getAllPoints().map(point => `
-            <div class="point-item ${point.selected ? 'selected' : ''}" data-id="${point.id}">
-                ${point.getDisplayName()} - ${point.waveType} (${point.strength})
-                ${point.velocity > 0 ? ` • v${point.velocity}` : ''}
-            </div>
-        `).join('');
-    }
-    
-    updateSelectedPoint(point) {
-        const section = this.elements.get('selectedPointSection');
-        if (!section) return;
-        
-        section.style.display = point ? 'block' : 'none';
-        if (!point) return;
-        
-        this.setText('selectedPointId', point.getDisplayName());
-        this.setText('pointWaveTypeBtn', point.waveType === 'sine' ? 'Sine' : 'Digital');
-        
-        Object.entries(CONFIG.ui.sliders).forEach(([key, config]) => {
-            const value = point[key.replace('point', '').toLowerCase()];
-            this.setValue(key, value);
-            this.setText(`${key}Value`, 
-                config.decimals > 0 ? 
-                Utils.math.formatValue(value, config.decimals) : value
-            );
-        });
-        
-        const waveBtn = this.elements.get('pointWaveTypeBtn');
-        if (waveBtn) {
-            waveBtn.className = `control-button ${point.waveType === 'sine' ? 'active' : ''}`;
-        }
-    }
-}
 
-// ===== INTERACTION MANAGER =====
-class InteractionManager {
-    constructor(canvas, simulation) {
-        this.canvas = canvas;
-        this.simulation = simulation;
-        this.state = {
-            isDragging: false,
-            dragPoint: null,
-            startPos: { x: 0, y: 0 },
-            longPressTimer: null,
-            isLongPressing: false
-        };
-        
-        this.indicator = document.getElementById('longPressIndicator');
-        this.setupEvents();
-    }
-    
-    setupEvents() {
-        const options = { passive: false };
-        
-        // Touch events
-        this.canvas.addEventListener('touchstart', e => this.handleStart(e, e.touches[0]), options);
-        this.canvas.addEventListener('touchmove', e => this.handleMove(e, e.touches[0]), options);
-        this.canvas.addEventListener('touchend', e => this.handleEnd(e), options);
-        
-        // Mouse events
-        this.canvas.addEventListener('mousedown', e => this.handleStart(e, e), options);
-        this.canvas.addEventListener('mousemove', e => this.handleMove(e, e), options);
-        this.canvas.addEventListener('mouseup', e => this.handleEnd(e), options);
-        
-        this.canvas.addEventListener('contextmenu', e => e.preventDefault());
-    }
-    
-    getCoordinates(pointer) {
-        const rect = this.canvas.getBoundingClientRect();
-        return {
-            x: Math.floor(pointer.clientX - rect.left),
-            y: Math.floor(pointer.clientY - rect.top)
-        };
-    }
-    
-    startLongPress(x, y) {
-        this.state.isLongPressing = true;
-        
-        if (this.indicator) {
-            this.indicator.style.left = `${x}px`;
-            this.indicator.style.top = `${y}px`;
-            this.indicator.classList.add('active');
-        }
-        
-        this.state.longPressTimer = setTimeout(() => {
-            if (this.state.isLongPressing) {
-                this.completeLongPress(x, y);
-            }
-        }, CONFIG.interaction.longPressTime);
-    }
-    
-    completeLongPress(x, y) {
-        Utils.feedback.haptic();
-        
-        if (this.indicator) {
-            this.indicator.classList.remove('active');
-            this.indicator.classList.add('complete');
-            setTimeout(() => this.indicator.classList.remove('complete'), 300);
-        }
-        
-        this.simulation.addPoint(x, y);
-        this.cancelLongPress();
-    }
-    
-    cancelLongPress() {
-        if (this.state.longPressTimer) {
-            clearTimeout(this.state.longPressTimer);
-            this.state.longPressTimer = null;
-        }
-        this.state.isLongPressing = false;
-        
-        if (this.indicator) {
-            this.indicator.classList.remove('active', 'complete');
-        }
-    }
-    
-    handleStart(event, pointer) {
-        event.preventDefault();
-        const coords = this.getCoordinates(pointer);
-        this.state.startPos = coords;
-        
-        const hitPoint = this.simulation.points.findPointAt(coords.x, coords.y);
-        
-        if (hitPoint) {
-            this.simulation.points.select(hitPoint.id);
-            this.state.isDragging = true;
-            this.state.dragPoint = hitPoint;
-            this.canvas.style.cursor = 'grabbing';
-        } else {
-            this.startLongPress(coords.x, coords.y);
-            this.simulation.points.deselect();
-        }
-    }
-    
-    handleMove(event, pointer) {
-        const coords = this.getCoordinates(pointer);
-        const distance = Utils.math.distance(
-            coords.x, coords.y, 
-            this.state.startPos.x, this.state.startPos.y
-        );
-        
-        if (distance > CONFIG.interaction.moveThreshold) {
-            this.cancelLongPress();
-        }
-        
-        if (this.state.isDragging && this.state.dragPoint) {
-            event.preventDefault();
-            if (distance > CONFIG.interaction.dragThreshold) {
-                this.state.dragPoint.x = coords.x;
-                this.state.dragPoint.y = coords.y;
-                this.simulation.render();
-            }
-        }
-    }
-    
-    handleEnd(event) {
-        if (this.state.isDragging) {
-            event.preventDefault();
-            this.state.isDragging = false;
-            this.state.dragPoint = null;
-            this.canvas.style.cursor = 'crosshair';
-        }
-        this.cancelLongPress();
-    }
-    
-    cleanup() {
-        this.state.isDragging = false;
-        this.state.dragPoint = null;
-        this.canvas.style.cursor = 'crosshair';
-        this.cancelLongPress();
-    }
-}
-
-// ===== ANIMATION ENGINE =====
-class AnimationEngine {
-    constructor(appState, points, renderer) {
-        this.appState = appState;
-        this.points = points;
-        this.renderer = renderer;
-        this.animationId = null;
-    }
-    
-    start() {
-        this.appState.set('isAnimating', true);
-        this.appState.animation.lastFrameTime = performance.now();
-        this.animate();
-    }
-    
-    stop() {
-        this.appState.set('isAnimating', false);
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-            this.animationId = null;
-        }
-    }
-    
-    toggle() {
-        this.appState.get('isAnimating') ? this.stop() : this.start();
-    }
-    
-    animate() {
-        const currentTime = performance.now();
-        
-        if (this.appState.shouldRender(currentTime)) {
-            const deltaTime = (currentTime - this.appState.animation.lastFrameTime) / 1000;
-            
-            if (this.appState.get('animatePoints')) {
-                const bounds = { width: window.innerWidth, height: window.innerHeight };
-                this.points.updatePositions(deltaTime, bounds);
-            }
-            
-            this.appState.incrementTime();
-            this.render();
-            this.appState.animation.lastFrameTime = currentTime;
-        }
-        
-        if (this.appState.get('isAnimating')) {
-            this.animationId = requestAnimationFrame(() => this.animate());
-        }
-    }
-    
-    render() {
-        const colorSettings = this.appState.getColorSettings();
-        this.renderer.waveField.render(
-            this.points, 
-            this.appState.get('mediumFade'),
-            this.appState.get('time'),
-            colorSettings
-        );
-        this.renderer.point.render(this.points, this.appState.get('showPoints'));
-    }
-}
-
-// ===== MAIN APPLICATION =====
-class WaveSimulation {
-    constructor() {
-        this.canvas = document.getElementById('canvas');
-        
-        // Core systems
-        this.appState = new AppState();
-        this.points = new PointManager();
-        this.ui = new UIController();
-        
-        // Renderers
-        this.renderer = {
-            waveField: new WaveFieldRenderer(this.canvas),
-            point: new PointRenderer(this.canvas)
-        };
-        
-        // Animation & Interaction
-        this.animationEngine = new AnimationEngine(this.appState, this.points, this.renderer);
-        this.interaction = new InteractionManager(this.canvas, this);
-        
-        this.init();
-    }
-    
-    init() {
-        this.setupEventHandlers();
-        this.setupStateListeners();
-        this.setupWindowEvents();
-        
-        // Welcome callback
-        this.ui.on('welcomeStartBtn', 'click', () => this.createStarterPoint());
-        
-        console.log('Wave simulation initialized');
-    }
-    
-    setupEventHandlers() {
-        // Control buttons
-        const buttonHandlers = {
-            clearBtn: () => this.clearAll(),
-            playPauseBtn: () => this.animationEngine.toggle(),
-            syncBtn: () => this.syncPoints(),
-            showPointsBtn: () => this.appState.set('showPoints', !this.appState.get('showPoints')),
-            animatePointsBtn: () => this.appState.set('animatePoints', !this.appState.get('animatePoints')),
-            generatePatternBtn: () => this.generatePattern(),
-            pointWaveTypeBtn: () => this.toggleWaveType(),
-            clonePointBtn: () => this.clonePoint(),
-            deletePointBtn: () => this.deletePoint(),
-            colorModeBtn: () => this.appState.set('useColor', !this.appState.get('useColor')),
-            complementaryBtn: () => this.setComplementaryColors()
-        };
-        
-        Object.entries(buttonHandlers).forEach(([id, handler]) => {
-            this.ui.on(id, 'click', handler);
-        });
-        
-        // Sliders
-        const sliderHandlers = {
-            pointStrength: (e) => this.updatePointProperty('strength', parseInt(e.target.value)),
-            pointFrequency: (e) => this.updatePointProperty('frequency', parseFloat(e.target.value)),
-            pointSpeed: (e) => this.updatePointProperty('speed', parseFloat(e.target.value)),
-            pointVelocity: (e) => this.updatePointProperty('velocity', parseInt(e.target.value)),
-            fadeSlider: (e) => this.appState.set('mediumFade', parseFloat(e.target.value)),
-            hue1Slider: (e) => this.appState.set('hue1', parseInt(e.target.value)),
-            hue2Slider: (e) => this.appState.set('hue2', parseInt(e.target.value)),
-            performanceSlider: (e) => this.appState.set('performanceLevel', parseInt(e.target.value)),
-            fpsSlider: (e) => this.appState.setFPS(parseInt(e.target.value)),
-            patternCount: (e) => this.ui.setText('patternCountValue', e.target.value)
-        };
-        
-        Object.entries(sliderHandlers).forEach(([id, handler]) => {
-            this.ui.on(id, 'input', handler);
-        });
-        
-        // Point list
-        this.ui.on('pointList', 'click', (e) => {
-            const item = e.target.closest('.point-item');
-            if (item) {
-                this.points.select(item.dataset.id);
-            }
-        });
-    }
-    
-    setupStateListeners() {
-        // App state changes
-        this.appState.on('change', ({ key, value }) => {
-            switch (key) {
-                case 'isAnimating':
-                    this.ui.updateButton('playPauseBtn', !value, 'Play', 'Pause');
-                    break;
-                case 'showPoints':
-                    this.ui.updateButton('showPointsBtn', value, 'Hide Points', 'Show Points');
-                    this.render();
-                    break;
-                case 'animatePoints':
-                    this.ui.updateButton('animatePointsBtn', value, 'Stop Movement', 'Animate Points');
-                    break;
-                case 'performanceLevel':
-                    this.renderer.waveField.setPerformanceLevel(value);
-                    this.updatePerformanceInfo();
-                    break;
-                case 'fps':
-                    this.ui.setText('fpsValue', `${value} FPS`);
-                    break;
-                case 'mediumFade':
-                    this.ui.setText('fadeValue', Utils.math.formatValue(value));
-                    this.ui.setValue('fadeSlider', value);
-                    break;
-                case 'useColor':
-                    this.ui.updateColorControls(value);
-                    this.render();
-                    break;
-                case 'hue1':
-                case 'hue2':
-                    this.ui.updateColorPreview(
-                        this.appState.get('hue1'),
-                        this.appState.get('hue2')
-                    );
-                    this.render();
-                    break;
-            }
-        });
-        
-        // Point changes
-        this.points.on('change', () => this.updatePointsUI());
-        this.points.on('select', (point) => {
-            this.ui.updateSelectedPoint(point);
-            this.updatePointsUI();
-        });
-    }
-    
-    setupWindowEvents() {
-        window.addEventListener('resize', () => {
-            this.renderer.waveField.resize();
-            this.updatePerformanceInfo();
-        });
-        
-        document.addEventListener('keydown', (e) => {
-            const selected = this.points.getSelected();
-            if (!selected) return;
-            
-            if (e.key === 'Delete' || e.key === 'Backspace') {
-                e.preventDefault();
-                this.deletePoint();
-            } else if (e.key === 'c' || e.key === 'C') {
-                e.preventDefault();
-                this.clonePoint();
-            }
-        });
-    }
-    
-    // Actions
-    addPoint(x, y, properties = {}) {
-        const point = this.points.add(x, y, properties);
-        point.startTime = this.appState.get('time');
-        this.points.select(point.id);
-        
-        if (!this.appState.get('isAnimating') && this.points.count > 0) {
-            this.animationEngine.start();
-        }
-    }
-    
-    generatePattern() {
-        const type = this.ui.get('patternType')?.value || 'grid';
-        const count = parseInt(this.ui.get('patternCount')?.value || 16);
-        
-        this.points.clear();
-        
-        const bounds = { width: window.innerWidth, height: window.innerHeight };
-        const positions = PatternGenerator.generate(type, count, bounds);
-        
-        positions.forEach((pos, index) => {
-            const point = this.points.add(pos.x, pos.y);
-            point.startTime = this.appState.get('time') - (index * 0.1);
-        });
-        
-        if (this.points.count > 0) {
-            const first = this.points.getAllPoints()[0];
-            if (first) this.points.select(first.id);
-            this.appState.set('showPoints', true);
-            if (!this.appState.get('isAnimating')) {
-                this.animationEngine.start();
-            }
-        }
-        
-        Utils.feedback.haptic();
-    }
-    
-    clonePoint() {
-        const selected = this.points.getSelected();
-        if (!selected) return;
-        
-        const bounds = { width: window.innerWidth, height: window.innerHeight };
-        const pos = Physics.findRandomPosition(this.points, bounds);
-        
-        const clone = this.points.add(pos.x, pos.y, selected.getProperties());
-        
-        if (selected.velocity > 0) {
-            Physics.setRandomVelocity(clone, selected.velocity);
-        }
-        
-        clone.startTime = this.appState.get('time');
-        this.points.select(clone.id);
-        
-        if (!this.appState.get('isAnimating')) {
-            this.animationEngine.start();
-        }
-        
-        Utils.feedback.visual(pos.x, pos.y, 'clone-flash');
-        Utils.feedback.haptic();
-    }
-    
-    deletePoint() {
-        const selected = this.points.getSelected();
-        if (selected) {
-            this.points.remove(selected.id);
-            if (this.points.count === 0) {
-                this.animationEngine.stop();
-            }
-        }
-    }
-    
-    toggleWaveType() {
-        const selected = this.points.getSelected();
-        if (selected) {
-            selected.waveType = selected.waveType === 'sine' ? 'step' : 'sine';
-            this.ui.updateSelectedPoint(selected);
-            this.updatePointsUI();
-        }
-    }
-    
-    updatePointProperty(property, value) {
-        const selected = this.points.getSelected();
-        if (selected && selected.updateProperty(property, value)) {
-            this.ui.updateSelectedPoint(selected);
-            this.updatePointsUI();
-        }
-    }
-    
-    syncPoints() {
-        if (this.points.count === 0) return;
-        
-        this.appState.resetTime();
-        for (const point of this.points) {
-            point.startTime = 0;
-        }
-        
-        if (!this.appState.get('isAnimating')) {
-            this.animationEngine.start();
-        }
-    }
-    
-    setComplementaryColors() {
-        const hue1 = this.appState.get('hue1');
-        const complementary = (hue1 + 180) % 360;
-        this.appState.set('hue2', complementary);
-        this.ui.setValue('hue2Slider', complementary);
-    }
-    
-    clearAll() {
-        this.points.clear();
-        this.appState.resetTime();
-        this.appState.set('showPoints', false);
-        this.animationEngine.stop();
-        this.interaction.cleanup();
-        this.render();
-    }
-    
-    createStarterPoint() {
-        const cx = Math.floor(window.innerWidth / 2);
-        const cy = Math.floor(window.innerHeight / 2);
-        const point = this.points.add(cx, cy);
-        point.startTime = 0;
-        this.points.select(point.id);
-        this.animationEngine.start();
-    }
-    
-    // UI Updates
-    updatePointsUI() {
-        this.ui.setText('stats', `Points: ${this.points.count}`);
-        this.ui.updatePointList(this.points);
-    }
-    
-    updatePerformanceInfo() {
-        const level = this.appState.get('performanceLevel');
-        const config = CONFIG.performance.levels[level];
-        const width = Math.floor(window.innerWidth / config.skip);
-        const height = Math.floor(window.innerHeight / config.skip);
-        const speedup = config.skip === 1 ? '' : ` (${config.skip ** 2}x faster)`;
-        
-        this.ui.setText('performanceValue', config.label);
-        this.ui.setText('performanceInfo', `Resolution: ${width}×${height}${speedup}`);
-    }
-    
-    render() {
-        this.animationEngine.render();
-    }
-}
-
-// ===== INITIALIZATION =====
-document.addEventListener('DOMContentLoaded', () => {
-    try {
-        new WaveSimulation();
-    } catch (error) {
-        console.error('Failed to initialize wave simulation:', error);
-        document.body.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: center; height: 100vh; color: white; text-align: center; font-family: monospace;">
-                <div>
-                    <h2>Wave Simulation Error</h2>
-                    <p>Failed to initialize application</p>
-                    <p style="font-size: 12px; opacity: 0.7;">Check console for details</p>
-                </div>
-            </div>
-        `;
-    }
-});
 </script>
 </body>
 </html>
