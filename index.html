@@ -1,1716 +1,1020 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Wave Simulation - Advanced Pattern Editor</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Wave Simulation — Bottom Sheet + Real Physics</title>
 <style>
-:root {
-    /* Colors */
-    --color-primary: #00ff88;
-    --color-secondary: #0088ff;
-    --color-danger: #ff4444;
-    --color-warning: #ff8844;
-    --color-pattern: #8a2be2;
-    
-    /* UI Colors */
-    --bg-primary: rgba(20, 20, 20, 0.95);
-    --bg-secondary: rgba(255, 255, 255, 0.05);
-    --bg-button: rgba(255, 255, 255, 0.1);
-    --bg-button-hover: rgba(255, 255, 255, 0.2);
-    --bg-button-active: rgba(255, 255, 255, 0.3);
-    --border-primary: rgba(255, 255, 255, 0.1);
-    --border-secondary: rgba(255, 255, 255, 0.2);
-    --text-primary: white;
-    --text-secondary: rgba(255, 255, 255, 0.7);
-    --text-muted: rgba(255, 255, 255, 0.5);
-    
-    /* Spacing */
-    --spacing-xs: 5px;
-    --spacing-sm: 10px;
-    --spacing-md: 15px;
-    --spacing-lg: 20px;
-    --spacing-xl: 30px;
-    
-    /* Sizes */
-    --control-height: 44px;
-    --slider-height: 6px;
-    --thumb-size: 20px;
-    --point-radius: 6px;
-    --select-radius: 20px;
-    
-    /* Animation */
-    --transition-fast: 0.2s ease;
-    --transition-normal: 0.3s ease;
-    --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    overflow: hidden;
-    background: #000;
-}
-
-/* Canvas */
-#canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #000;
-    cursor: crosshair;
-    touch-action: none;
-}
-
-/* Visual Indicators */
-.visual-indicator {
-    position: fixed;
-    pointer-events: none;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    opacity: 0;
-    z-index: 1000;
-}
-
-.long-press-indicator {
-    width: 60px;
-    height: 60px;
-    border: 2px solid rgba(0, 255, 136, 0.6);
-}
-
-.long-press-indicator.active {
-    animation: longPressGrow 0.5s ease-out forwards;
-}
-
-.long-press-indicator.complete {
-    animation: fadeOut 0.3s ease-out forwards;
-}
-
-.clone-flash {
-    width: 80px;
-    height: 80px;
-    border: 3px solid var(--color-secondary);
-    animation: pulseOut 0.5s ease-out;
-}
-
-/* Animations */
-@keyframes longPressGrow {
-    from {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(0.5);
-    }
-    to {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.2);
-        border-color: var(--color-primary);
-        box-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
-    }
-}
-
-@keyframes fadeOut {
-    from {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.2);
-    }
-    to {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(1.5);
-    }
-}
-
-@keyframes pulseOut {
-    0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.5);
-    }
-    50% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(2);
-    }
-}
-
-/* Menu Toggle */
-.menu-toggle {
-    position: fixed;
-    top: var(--spacing-lg);
-    right: var(--spacing-lg);
-    z-index: 1000;
-    width: 50px;
-    height: 50px;
-    background: var(--bg-button);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border-secondary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: var(--transition-normal);
-}
-
-.menu-toggle:hover {
-    background: var(--bg-button-hover);
-}
-
-.menu-icon {
-    width: 24px;
-    height: 18px;
-    position: relative;
-}
-
-.menu-icon span {
-    display: block;
-    width: 100%;
-    height: 2px;
-    background: var(--text-primary);
-    margin: 4px 0;
-    transition: var(--transition-normal);
-}
-
-.menu-toggle.active .menu-icon span:nth-child(1) {
-    transform: rotate(45deg) translate(5px, 5px);
-}
-
-.menu-toggle.active .menu-icon span:nth-child(2) {
-    opacity: 0;
-}
-
-.menu-toggle.active .menu-icon span:nth-child(3) {
-    transform: rotate(-45deg) translate(7px, -6px);
-}
-
-/* Control Panel */
-.control-panel {
-    position: fixed;
-    top: 0;
-    right: -360px;
-    width: 360px;
-    height: 100vh;
-    background: var(--bg-primary);
-    backdrop-filter: blur(20px);
-    border-left: 1px solid var(--border-primary);
-    z-index: 999;
-    transition: right var(--transition-slow);
-    overflow-y: auto;
-    color: var(--text-primary);
-}
-
-.control-panel.open {
-    right: 0;
-}
-
-.panel-header {
-    padding: var(--spacing-lg);
-    border-bottom: 1px solid var(--border-primary);
-}
-
-.panel-title {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 5px;
-}
-
-.panel-subtitle {
-    font-size: 12px;
-    opacity: 0.7;
-}
-
-.control-section {
-    padding: var(--spacing-lg);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.section-title {
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: var(--spacing-md);
-    opacity: 0.9;
-}
-
-.subsection {
-    background: var(--bg-secondary);
-    border-radius: 8px;
-    padding: var(--spacing-sm);
-    margin-top: var(--spacing-md);
-}
-
-.subsection-title {
-    font-size: 12px;
-    font-weight: 500;
-    margin-bottom: var(--spacing-sm);
-    opacity: 0.8;
-}
-
-/* Form Controls */
-.control-group {
-    margin-bottom: var(--spacing-lg);
-}
-
-.control-group.compact {
-    margin-bottom: var(--spacing-sm);
-}
-
-.control-label {
-    display: block;
-    font-size: 12px;
-    margin-bottom: 8px;
-    opacity: 0.8;
-}
-
-.select-input {
-    width: 100%;
-    padding: 8px;
-    background: var(--bg-button);
-    border: 1px solid var(--border-secondary);
-    border-radius: 6px;
-    color: var(--text-primary);
-    font-size: 13px;
-    cursor: pointer;
-    transition: var(--transition-fast);
-}
-
-.select-input:hover {
-    background: var(--bg-button-hover);
-}
-
-.select-input:focus {
-    outline: none;
-    border-color: var(--color-primary);
-}
-
-.slider-container {
-    position: relative;
-}
-
-.slider {
-    width: 100%;
-    height: var(--slider-height);
-    background: var(--bg-button);
-    border-radius: 3px;
-    outline: none;
-    appearance: none;
-    -webkit-appearance: none;
-}
-
-.slider.mini {
-    height: 4px;
-}
-
-.slider::-webkit-slider-thumb {
-    appearance: none;
-    -webkit-appearance: none;
-    width: var(--thumb-size);
-    height: var(--thumb-size);
-    background: var(--text-primary);
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-}
-
-.slider.mini::-webkit-slider-thumb {
-    width: 16px;
-    height: 16px;
-}
-
-.slider::-moz-range-thumb {
-    width: var(--thumb-size);
-    height: var(--thumb-size);
-    background: var(--text-primary);
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-}
-
-.slider.mini::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-}
-
-.slider-value {
-    position: absolute;
-    right: 0;
-    top: -25px;
-    font-size: 11px;
-    background: var(--bg-button);
-    padding: 2px 6px;
-    border-radius: 3px;
-    min-width: 35px;
-    text-align: center;
-}
-
-.slider-value.inline {
-    position: static;
-    display: inline-block;
-    margin-left: 8px;
-}
-
-/* Buttons */
-.button-group {
-    display: flex;
-    gap: var(--spacing-sm);
-    flex-wrap: wrap;
-}
-
-.control-button {
-    flex: 1;
-    min-width: 80px;
-    padding: 12px 16px;
-    background: var(--bg-button);
-    border: 1px solid var(--border-secondary);
-    border-radius: 8px;
-    color: var(--text-primary);
-    font-size: 13px;
-    cursor: pointer;
-    transition: var(--transition-fast);
-}
-
-.control-button.mini {
-    padding: 6px 12px;
-    font-size: 12px;
-    min-width: 60px;
-}
-
-.control-button:hover {
-    background: var(--bg-button-hover);
-}
-
-.control-button:active {
-    transform: scale(0.98);
-}
-
-.control-button.active {
-    background: var(--bg-button-active);
-    border-color: rgba(255, 255, 255, 0.5);
-}
-
-/* Button Variants */
-.control-button.primary {
-    background: rgba(0, 255, 136, 0.2);
-    border-color: rgba(0, 255, 136, 0.4);
-}
-
-.control-button.primary:hover {
-    background: rgba(0, 255, 136, 0.3);
-}
-
-.control-button.secondary {
-    background: rgba(0, 136, 255, 0.2);
-    border-color: rgba(0, 136, 255, 0.4);
-}
-
-.control-button.secondary:hover {
-    background: rgba(0, 136, 255, 0.3);
-}
-
-.control-button.danger {
-    background: rgba(255, 68, 68, 0.2);
-    border-color: rgba(255, 68, 68, 0.4);
-}
-
-.control-button.danger:hover {
-    background: rgba(255, 68, 68, 0.3);
-}
-
-.control-button.pattern {
-    background: rgba(138, 43, 226, 0.2);
-    border-color: rgba(138, 43, 226, 0.4);
-}
-
-.control-button.pattern:hover {
-    background: rgba(138, 43, 226, 0.3);
-}
-
-/* Status & Info */
-.info-text {
-    font-size: 11px;
-    opacity: 0.6;
-    margin-top: var(--spacing-sm);
-}
-
-.stats-text {
-    font-size: 10px;
-    opacity: 0.5;
-    margin-top: 5px;
-    font-family: monospace;
-}
-
-/* Point Management */
-.point-section {
-    background: var(--bg-secondary);
-    border-radius: 8px;
-    padding: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
-}
-
-.point-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--spacing-md);
-}
-
-.point-id {
-    font-size: 12px;
-    opacity: 0.7;
-    font-family: monospace;
-}
-
-.point-list {
-    max-height: 200px;
-    overflow-y: auto;
-    border: 1px solid var(--border-primary);
-    border-radius: 5px;
-}
-
-.point-item {
-    padding: 8px 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    cursor: pointer;
-    transition: background var(--transition-fast);
-    font-size: 12px;
-}
-
-.point-item:hover {
-    background: var(--bg-button);
-}
-
-.point-item.selected {
-    background: var(--bg-button-hover);
-}
-
-.empty-state {
-    text-align: center;
-    opacity: 0.5;
-    font-size: 12px;
-    padding: var(--spacing-lg);
-}
-
-/* Overlays */
-.panel-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.3);
-    z-index: 998;
-    opacity: 0;
-    visibility: hidden;
-    transition: var(--transition-normal);
-}
-
-.panel-overlay.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-/* Welcome Modal */
-.welcome-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
-    z-index: 2000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--spacing-lg);
-}
-
-.welcome-modal {
-    background: var(--bg-primary);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--border-secondary);
-    border-radius: 16px;
-    max-width: 500px;
-    width: 100%;
-    color: var(--text-primary);
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-}
-
-.welcome-header {
-    padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
-    text-align: center;
-    border-bottom: 1px solid var(--border-primary);
-}
-
-.welcome-header h2 {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 8px;
-}
-
-.welcome-header p {
-    font-size: 14px;
-    opacity: 0.7;
-    margin: 0;
-}
-
-.welcome-content {
-    padding: 25px var(--spacing-xl);
-}
-
-.instruction-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.instruction-item {
-    font-size: 14px;
-    line-height: 1.5;
-    padding: 12px 16px;
-    background: var(--bg-secondary);
-    border-radius: 8px;
-    border-left: 3px solid rgba(255, 255, 255, 0.3);
-}
-
-.instruction-item strong {
-    color: var(--color-primary);
-    font-weight: 600;
-}
-
-.welcome-footer {
-    padding: var(--spacing-lg) var(--spacing-xl) var(--spacing-xl);
-    text-align: center;
-}
-
-.welcome-button {
-    background: linear-gradient(135deg, var(--color-primary), #00cc6a);
-    border: none;
-    border-radius: 12px;
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-    padding: 16px 32px;
-    cursor: pointer;
-    transition: var(--transition-normal);
-    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
-}
-
-.welcome-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
-}
-
-.welcome-button:active {
-    transform: translateY(0);
-}
-
-/* Responsive Design */
-@media (min-width: 768px) {
-    .menu-toggle {
-        top: var(--spacing-xl);
-        right: var(--spacing-xl);
-        width: 60px;
-        height: 60px;
-    }
-    
-    .control-panel {
-        width: 400px;
-        right: -400px;
-    }
-    
-    .control-section {
-        padding: 25px;
-    }
+:root{
+  --bg-primary: rgba(20,20,20,0.95);
+  --bg-secondary: rgba(255,255,255,0.05);
+  --bg-button: rgba(255,255,255,0.1);
+  --bg-button-hover: rgba(255,255,255,0.2);
+  --bg-button-active: rgba(255,255,255,0.3);
+  --color-primary:#00ff88; --color-secondary:#0088ff;
+  --color-danger:#ff4444; --color-warning:#ff9500; --color-accent:#8a2be2;
+  --text-primary:#fff; --border-primary: rgba(255,255,255,0.1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  background:#000; overflow:hidden; position:fixed; inset:0;
+}
+#canvas{
+  position:fixed; inset:0; width:100vw; height:100vh; background:#000; touch-action:none;
+  cursor:url("data:image/svg+xml,%3csvg width='20' height='20' xmlns='http://www.w3.org/2000/svg'%3e%3cline x1='10' y1='0' x2='10' y2='20' stroke='%2300ff88' stroke-width='2'/%3e%3cline x1='0' y1='10' x2='20' y2='10' stroke='%2300ff88' stroke-width='2'/%3e%3c/svg%3e") 10 10, crosshair;
+  display:block;
+}
+
+/* Visual indicators */
+.visual-indicator{position:fixed; pointer-events:none; border-radius:50%; transform:translate(-50%,-50%); opacity:0; z-index:1000}
+.long-press-indicator{width:60px;height:60px;border:2px solid rgba(0,255,136,0.6)}
+.long-press-indicator.active{animation:longPressGrow .5s ease-out forwards}
+.long-press-indicator.complete{animation:fadeOut .3s ease-out forwards}
+.clone-flash{width:80px;height:80px;border:3px solid var(--color-secondary);animation:pulseOut .5s ease-out}
+@keyframes longPressGrow{from{transform:translate(-50%,-50%) scale(0.5);opacity:.2}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0}}
+@keyframes pulseOut{0%{opacity:1;transform:translate(-50%,-50%) scale(0.6)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}
+
+/* Deletion zones */
+.deletion-zone{position:fixed; pointer-events:none; z-index:500; opacity:0; transition:opacity .2s ease}
+.deletion-zone.active{opacity:1}
+#deletionTop,#deletionBottom{left:0; right:0; height:64px; background:linear-gradient(to bottom, rgba(255,68,68,.25), rgba(255,68,68,0))}
+#deletionTop{top:0} #deletionBottom{bottom:0}
+#deletionLeft,#deletionRight{top:0; bottom:0; width:64px; background:linear-gradient(to right, rgba(255,68,68,.25), rgba(255,68,68,0))}
+#deletionLeft{left:0} #deletionRight{right:0}
+
+/* Floating Add button */
+#addBtn{
+  position:fixed; right:16px; bottom:96px; z-index:600;
+  background:var(--bg-button); color:var(--text-primary); border:1px solid var(--border-primary);
+  padding:12px 14px; border-radius:14px; backdrop-filter: blur(8px);
+}
+#addBtn:active{background:var(--bg-button-active)}
+
+/* Bottom sheet */
+.bottom-sheet{position:fixed; left:0; right:0; bottom:0; z-index:700; transform:translateY(calc(100% - 84px)); transition:transform .25s ease}
+.sheet-header{display:flex; align-items:center; justify-content:center; padding:10px 16px}
+.sheet-handle{width:64px;height:5px;background:rgba(255,255,255,.25);border-radius:999px}
+.panel-title{color:#fff; text-align:center; margin-top:8px; font-weight:600}
+.panel-navigation{display:flex; gap:6px; justify-content:center; padding:10px 0}
+.nav-segment{width:10px;height:10px;border-radius:999px;background:rgba(255,255,255,.2)}
+.nav-segment.active{background:#fff}
+.sheet-surface{
+  background:var(--bg-primary); border-top:1px solid var(--border-primary);
+  border-top-left-radius:16px; border-top-right-radius:16px; backdrop-filter: blur(12px);
+}
+.sheet-content{padding:8px 0 16px}
+.panels-container{display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch}
+.panel{min-width:100vw; padding:8px 16px 24px; scroll-snap-align:start; color:#fff}
+.control-section{background:var(--bg-secondary); border:1px solid var(--border-primary); border-radius:14px; padding:14px; margin:10px 0}
+.section-title{font-weight:700; margin-bottom:8px}
+.toggle-row{display:flex; justify-content:space-between; gap:12px}
+.toggle-group{display:flex; align-items:center; gap:10px}
+.toggle-switch{width:48px;height:28px;border-radius:999px;background:rgba(255,255,255,.15);position:relative;border:1px solid var(--border-primary)}
+.toggle-switch .toggle-circle{position:absolute; top:3px; left:3px; width:22px;height:22px;border-radius:50%; background:#fff; transition:left .2s}
+.toggle-switch.active{background:rgba(0,255,136,.25)}
+.toggle-switch.active .toggle-circle{left:23px}
+.button-group{display:flex; gap:10px; flex-wrap:wrap}
+.control-button{background:var(--bg-button);border:1px solid var(--border-primary);color:#fff;padding:10px 12px;border-radius:12px}
+.control-button.primary{background:rgba(0,255,136,.15)}
+.control-button.danger{background:rgba(255,68,68,.15)}
+.control-button.pattern{background:rgba(138,43,226,.15)}
+.slider-container{display:flex; gap:10px; align-items:center}
+.slider{width:100%}
+.slider-value{width:90px; padding:8px; background:transparent; color:#fff; border:1px solid var(--border-primary); border-radius:10px}
+.select-input{width:100%; padding:10px; background:transparent; color:#fff; border:1px solid var(--border-primary); border-radius:10px}
+.info-text,.stats-text{opacity:.8; font-size:12px; margin-top:6px}
+.point-list{display:flex; flex-direction:column; gap:8px; max-height:28vh; overflow:auto}
+.point-item{display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,.06); border:1px solid var(--border-primary); padding:10px 12px; border-radius:12px}
+.empty-state{opacity:.7; text-align:center; padding:14px 0}
+.color-preview{height:16px; border-radius:8px; border:1px solid var(--border-primary)}
+@media (min-width:768px){
+  .bottom-sheet{transform:translateY(calc(100% - 120px))}
 }
 </style>
 </head>
 <body>
 <canvas id="canvas"></canvas>
 
-<!-- Visual Indicators -->
-<div class="visual-indicator long-press-indicator" id="longPressIndicator"></div>
+<!-- Deletion zones + indicators -->
+<div id="deletionTop" class="deletion-zone"></div>
+<div id="deletionBottom" class="deletion-zone"></div>
+<div id="deletionLeft" class="deletion-zone"></div>
+<div id="deletionRight" class="deletion-zone"></div>
+<div id="longPressIndicator" class="visual-indicator long-press-indicator"></div>
 
-<!-- Welcome Modal -->
-<div class="welcome-overlay" id="welcomeOverlay">
-    <div class="welcome-modal">
-        <div class="welcome-header">
-            <h2>Wave Physics Simulation</h2>
-            <p>Advanced pattern generation & wave control</p>
-        </div>
-        <div class="welcome-content">
-            <div class="instruction-list">
-                <div class="instruction-item">
-                    <strong>Create waves:</strong> Press and hold on empty space to add wave sources
-                </div>
-                <div class="instruction-item">
-                    <strong>Generate patterns:</strong> Create mathematical layouts with custom wave properties
-                </div>
-                <div class="instruction-item">
-                    <strong>Global control:</strong> Adjust phase shift and time scale for all waves
-                </div>
-                <div class="instruction-item">
-                    <strong>Fine-tune:</strong> Select and modify individual points after generation
-                </div>
+<!-- Floating add -->
+<button id="addBtn">+ Add</button>
+
+<!-- Bottom sheet -->
+<div id="bottomSheet" class="bottom-sheet">
+  <div class="sheet-surface">
+    <div class="sheet-header">
+      <div id="sheetHandle" class="sheet-handle"></div>
+    </div>
+    <div class="panel-title" id="panelTitle"><span id="panelTitleText">Quick Controls</span></div>
+    <div class="panel-navigation" id="panelNavigation">
+      <div class="nav-segment active" data-panel="0"></div>
+      <div class="nav-segment" data-panel="1"></div>
+      <div class="nav-segment" data-panel="2"></div>
+      <div class="nav-segment" data-panel="3"></div>
+      <div class="nav-segment" data-panel="4"></div>
+    </div>
+
+    <div class="sheet-content">
+      <div id="panelsContainer" class="panels-container">
+
+        <!-- Panel 1: Quick Controls -->
+        <div class="panel" data-panel-id="0">
+          <div class="control-section">
+            <div class="button-group">
+              <button id="syncBtn" class="control-button primary">Sync</button>
+              <button id="clearBtn" class="control-button danger">Clear All</button>
             </div>
+          </div>
+          <div class="control-section">
+            <div class="toggle-row">
+              <div class="toggle-group">
+                <label class="control-label">Show Points</label>
+                <div id="showPointsToggle" class="toggle-switch"><div class="toggle-circle"></div></div>
+              </div>
+              <div class="toggle-group">
+                <label class="control-label">Show Grid</label>
+                <div id="showGridToggle" class="toggle-switch"><div class="toggle-circle"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="control-section">
+            <div id="stats" class="info-text">Points: 0 / 36</div>
+            <div id="performanceInfo" class="stats-text">Ready to create waves</div>
+          </div>
         </div>
-        <div class="welcome-footer">
-            <button class="welcome-button" id="welcomeStartBtn">Get Started</button>
-        </div>
-    </div>
-</div>
 
-<!-- Menu Toggle -->
-<button class="menu-toggle" id="menuToggle">
-    <div class="menu-icon">
-        <span></span>
-        <span></span>
-        <span></span>
-    </div>
-</button>
+        <!-- Panel 2: Medium Properties -->
+        <div class="panel" data-panel-id="1">
+          <div class="control-section">
+            <div class="control-group">
+              <label class="control-label">Global Speed</label>
+              <div class="slider-container">
+                <input id="timeMultiplierSlider" type="range" class="slider" min="0" max="30" step="0.5" value="10">
+                <input id="timeMultiplierValue" type="number" class="slider-value" min="0" max="30" step="0.5" value="10">
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">Damping</label>
+              <div class="slider-container">
+                <input id="dampingSlider" type="range" class="slider" min="0" max="0.03" step="0.001" value="0.008">
+                <input id="dampingValue" type="number" class="slider-value" min="0" max="0.03" step="0.001" value="0.008">
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">Resolution</label>
+              <div class="slider-container">
+                <input id="performanceSlider" type="range" class="slider" min="0" max="5" step="1" value="2">
+                <input id="performanceValue" type="number" class="slider-value" min="0" max="5" value="2">
+              </div>
+              <div class="info-text">Higher values = faster rendering</div>
+            </div>
+          </div>
 
-<!-- Control Panel -->
-<div class="panel-overlay" id="panelOverlay"></div>
-<div class="control-panel" id="controlPanel">
-    <div class="panel-header">
-        <div class="panel-title">Wave Pattern Editor</div>
-        <div class="panel-subtitle">Advanced wave interference control</div>
-    </div>
-    
-    <!-- Animation Controls -->
-    <div class="control-section">
-        <div class="section-title">Animation</div>
-        <div class="button-group">
-            <button class="control-button" id="clearBtn">Clear All</button>
-            <button class="control-button" id="playPauseBtn">Pause</button>
-            <button class="control-button" id="syncBtn">Sync</button>
+          <div class="control-section">
+            <div class="control-group">
+              <label class="control-label">Color Mode</label>
+              <div id="colorToggle" class="toggle-switch"><div class="toggle-circle"></div></div>
+              <div class="info-text">Enable for colorful wave patterns</div>
+            </div>
+            <div id="colorControls" class="control-group" style="display:none">
+              <label class="control-label">Minima Color (Hue)</label>
+              <div class="slider-container">
+                <input id="hue1Slider" type="range" class="slider" min="0" max="360" step="1" value="185">
+                <input id="hue1Value" type="number" class="slider-value" min="0" max="360" value="185">
+              </div>
+            </div>
+            <div id="colorControls2" class="control-group" style="display:none">
+              <label class="control-label">Maxima Color (Hue)</label>
+              <div class="slider-container">
+                <input id="hue2Slider" type="range" class="slider" min="0" max="360" step="1" value="285">
+                <input id="hue2Value" type="number" class="slider-value" min="0" max="360" value="285">
+              </div>
+            </div>
+            <div id="colorPreview" class="control-group" style="display:none">
+              <label class="control-label">Color Preview</label>
+              <div id="gradientPreview" class="color-preview" style="background:linear-gradient(to right,hsl(185,70%,50%),hsl(285,70%,50%))"></div>
+            </div>
+          </div>
         </div>
-        <div class="button-group" style="margin-top: 10px;">
-            <button class="control-button" id="showPointsBtn">Show Points</button>
-            <button class="control-button" id="animatePointsBtn">Animate Points</button>
-        </div>
-        <div class="info-text" id="stats">Points: 0</div>
-    </div>
-    
-    <!-- Pattern Generator -->
-    <div class="control-section">
-        <div class="section-title">Pattern Generator</div>
-        
-        <div class="control-group">
-            <label class="control-label">Pattern Type</label>
-            <select id="patternType" class="select-input">
+
+        <!-- Panel 3: Pattern Generator -->
+        <div class="panel" data-panel-id="2">
+          <div class="control-section">
+            <div class="control-group">
+              <label class="control-label">Pattern Type</label>
+              <select id="patternType" class="select-input">
                 <option value="grid">Grid</option>
                 <option value="radial">Radial</option>
                 <option value="spiral">Spiral</option>
                 <option value="sunflower">Sunflower</option>
-            </select>
-        </div>
-        
-        <div class="control-group">
-            <label class="control-label">Point Count</label>
-            <div class="slider-container">
-                <input type="range" class="slider" id="patternCount" min="4" max="36" step="1" value="16">
-                <div class="slider-value" id="patternCountValue">16</div>
+              </select>
             </div>
-        </div>
-        
-        <div class="control-group">
-            <label class="control-label">Pattern Scale</label>
-            <div class="slider-container">
-                <input type="range" class="slider" id="patternScale" min="0.3" max="2.0" step="0.1" value="1.0">
-                <div class="slider-value" id="patternScaleValue">1.0×</div>
-            </div>
-            <div class="info-text" id="scaleInfo">Normal size</div>
-        </div>
-        
-        <!-- Wave Template -->
-        <div class="subsection">
-            <div class="subsection-title">Wave Template</div>
-            
-            <div class="control-group compact">
-                <label class="control-label">Strength</label>
-                <div class="slider-container">
-                    <input type="range" class="slider mini" id="templateStrength" min="10" max="100" step="5" value="60">
-                    <span class="slider-value inline" id="templateStrengthValue">60</span>
-                </div>
-            </div>
-            
-            <div class="control-group compact">
-                <label class="control-label">Frequency</label>
-                <div class="slider-container">
-                    <input type="range" class="slider mini" id="templateFrequency" min="0.005" max="0.08" step="0.005" value="0.02">
-                    <span class="slider-value inline" id="templateFrequencyValue">0.020</span>
-                </div>
-            </div>
-            
-            <div class="control-group compact">
-                <label class="control-label">Speed</label>
-                <div class="slider-container">
-                    <input type="range" class="slider mini" id="templateSpeed" min="0.1" max="1.0" step="0.1" value="1.0">
-                    <span class="slider-value inline" id="templateSpeedValue">1.0</span>
-                </div>
-            </div>
-            
-            <div class="control-group compact">
-                <label class="control-label">Wave Type</label>
-                <div class="button-group">
-                    <button class="control-button mini active" id="templateWaveType">Sine</button>
-                </div>
-            </div>
-        </div>
-        
-        <div class="button-group" style="margin-top: 15px;">
-            <button class="control-button pattern" id="generatePatternBtn">Generate Pattern</button>
-        </div>
-        <div class="info-text">Replaces existing points with pattern</div>
-    </div>
-    
-    <!-- Global Wave Control -->
-    <div class="control-section">
-        <div class="section-title">Global Wave Control</div>
-        
-        <div class="control-group">
-            <label class="control-label">Phase Shift</label>
-            <div class="slider-container">
-                <input type="range" class="slider" id="phaseShift" min="-3.14159" max="3.14159" step="0.1" value="0">
-                <div class="slider-value" id="phaseShiftValue">0.00</div>
-            </div>
-            <div class="info-text" id="phaseInfo">0° phase offset</div>
-        </div>
-        
-        <div class="control-group">
-            <label class="control-label">Time Scale</label>
-            <div class="slider-container">
-                <input type="range" class="slider" id="timeScale" min="0.25" max="2.0" step="0.05" value="1.0">
-                <div class="slider-value" id="timeScaleValue">1.0×</div>
-            </div>
-            <div class="info-text" id="timeInfo">Normal speed</div>
-        </div>
-        
-        <div class="button-group">
-            <button class="control-button" id="resetGlobalBtn">Reset Global</button>
-        </div>
-    </div>
-    
-    <!-- Point List -->
-    <div class="control-section">
-        <div class="section-title">Point List</div>
-        <div class="point-list" id="pointList">
-            <div class="empty-state">No points created</div>
-        </div>
-    </div>
-    
-    <!-- Selected Point Controls -->
-    <div class="control-section" id="selectedPointSection" style="display: none;">
-        <div class="section-title">Selected Point</div>
-        <div class="point-section">
-            <div class="point-header">
-                <span class="point-id" id="selectedPointId">Point #1</span>
-            </div>
-            
             <div class="control-group">
-                <label class="control-label">Wave Type</label>
-                <div class="button-group">
-                    <button class="control-button active" id="pointWaveTypeBtn">Sine</button>
-                </div>
+              <label class="control-label">Number of Points</label>
+              <div class="slider-container">
+                <input id="patternCount" type="range" class="slider" min="3" max="36" step="1" value="16">
+                <input id="patternCountValue" type="number" class="slider-value" min="3" max="36" value="16">
+              </div>
             </div>
-            
             <div class="control-group">
-                <label class="control-label">Strength</label>
-                <div class="slider-container">
-                    <input type="range" class="slider" id="pointStrength" min="10" max="100" step="5" value="60">
-                    <div class="slider-value" id="pointStrengthValue">60</div>
-                </div>
+              <label class="control-label">Pattern Scale</label>
+              <div class="slider-container">
+                <input id="patternScale" type="range" class="slider" min="0.3" max="2.0" step="0.1" value="1.0">
+                <input id="patternScaleValue" type="number" class="slider-value" min="0.3" max="2.0" step="0.1" value="1.0">
+              </div>
             </div>
-            
-            <div class="control-group">
-                <label class="control-label">Frequency</label>
-                <div class="slider-container">
-                    <input type="range" class="slider" id="pointFrequency" min="0.005" max="0.08" step="0.005" value="0.02">
-                    <div class="slider-value" id="pointFrequencyValue">0.020</div>
-                </div>
-            </div>
-            
-            <div class="control-group">
-                <label class="control-label">Speed</label>
-                <div class="slider-container">
-                    <input type="range" class="slider" id="pointSpeed" min="0.1" max="1.0" step="0.1" value="1.0">
-                    <div class="slider-value" id="pointSpeedValue">1.0</div>
-                </div>
-            </div>
-            
-            <div class="control-group">
-                <label class="control-label">Velocity</label>
-                <div class="slider-container">
-                    <input type="range" class="slider" id="pointVelocity" min="0" max="50" step="5" value="0">
-                    <div class="slider-value" id="pointVelocityValue">0</div>
-                </div>
-            </div>
-            
             <div class="button-group">
-                <button class="control-button secondary" id="clonePointBtn">Clone Point</button>
-                <button class="control-button danger" id="deletePointBtn">Delete Point</button>
+              <button id="generatePatternBtn" class="control-button pattern">Add Pattern</button>
             </div>
+            <div class="info-text">Adds to existing points (max 36 total)</div>
+          </div>
         </div>
-    </div>
-    
-    <!-- Medium Properties -->
-    <div class="control-section">
-        <div class="section-title">Medium Properties</div>
-        <div class="control-group">
-            <label class="control-label">Wave Fade</label>
-            <div class="slider-container">
-                <input type="range" class="slider" id="fadeSlider" min="0.0" max="0.03" step="0.002" value="0.008">
-                <div class="slider-value" id="fadeValue">0.008</div>
+
+        <!-- Panel 4: Edit Points -->
+        <div class="panel" data-panel-id="3">
+          <div class="control-section">
+            <div id="editModeContainer" class="control-group" style="display:none">
+              <label class="control-label"><input id="singleEditMode" type="checkbox" style="margin-right:8px">Edit Selected Point Only</label>
             </div>
-        </div>
-    </div>
-    
-    <!-- Color Settings -->
-    <div class="control-section">
-        <div class="section-title">Color Settings</div>
-        <div class="control-group">
-            <label class="control-label">Color Mode</label>
+            <div id="selectedPointInfo" class="point-section" style="display:none">
+              <div class="point-header"><span id="selectedPointId" class="point-id">Point #1</span></div>
+            </div>
+          </div>
+
+          <div class="control-section">
+            <div class="control-group">
+              <label class="control-label">Wave Type</label>
+              <div id="pointWaveTypeToggle" class="toggle-switch"><div class="toggle-circle"></div></div>
+              <div class="info-text">Sine wave (on) / Square wave (off)</div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">Amplitude</label>
+              <div class="slider-container">
+                <input id="pointAmplitude" type="range" class="slider" min="10" max="100" step="5" value="60">
+                <input id="pointAmplitudeValue" type="number" class="slider-value" min="10" max="100" value="60">
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">Wavelength</label>
+              <div class="slider-container">
+                <input id="pointWavelength" type="range" class="slider" min="20" max="400" step="10" value="100">
+                <input id="pointWavelengthValue" type="number" class="slider-value" min="20" max="400" value="100">
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">Speed</label>
+              <div class="slider-container">
+                <input id="pointSpeed" type="range" class="slider" min="0.1" max="1.0" step="0.05" value="1.0">
+                <input id="pointSpeedValue" type="number" class="slider-value" min="0.1" max="1.0" step="0.05" value="1.0">
+              </div>
+            </div>
+            <div class="control-group">
+              <label class="control-label">Phase Offset (×π)</label>
+              <div class="slider-container">
+                <input id="pointPhaseOffsetSlider" type="range" class="slider" min="-2" max="2" step="0.1" value="0">
+                <input id="pointPhaseOffsetValue" type="number" class="slider-value" min="-2" max="2" step="0.1" value="0">
+              </div>
+            </div>
             <div class="button-group">
-                <button class="control-button active" id="colorModeBtn">Grayscale</button>
+              <button id="clonePointBtn" class="control-button secondary">Clone Point</button>
+              <button id="deletePointBtn" class="control-button danger">Delete Point</button>
             </div>
+          </div>
         </div>
-        
-        <div class="control-group" id="colorControls" style="display: none;">
-            <label class="control-label">Minima Color (Hue)</label>
-            <div class="slider-container">
-                <input type="range" class="slider" id="hue1Slider" min="0" max="360" step="1" value="240">
-                <div class="slider-value" id="hue1Value">240°</div>
+
+        <!-- Panel 5: Point List -->
+        <div class="panel" data-panel-id="4">
+          <div class="control-section">
+            <div class="section-title">All Points</div>
+            <div id="pointList" class="point-list">
+              <div class="empty-state">No points created<br>Use + button or long-press on canvas</div>
             </div>
+          </div>
         </div>
-        
-        <div class="control-group" id="colorControls2" style="display: none;">
-            <label class="control-label">Maxima Color (Hue)</label>
-            <div class="slider-container">
-                <input type="range" class="slider" id="hue2Slider" min="0" max="360" step="1" value="0">
-                <div class="slider-value" id="hue2Value">0°</div>
-            </div>
-        </div>
-        
-        <div class="button-group" id="colorButtons" style="display: none;">
-            <button class="control-button" id="complementaryBtn">Complementary</button>
-        </div>
-        
-        <div class="control-group" id="colorPreview" style="display: none;">
-            <label class="control-label">Color Preview</label>
-            <div id="gradientPreview" style="width: 100%; height: 20px; border-radius: 4px; background: linear-gradient(to right, hsl(240, 70%, 50%), hsl(0, 70%, 50%)); border: 1px solid rgba(255, 255, 255, 0.2);"></div>
-        </div>
+
+      </div>
     </div>
-    
-    <!-- Performance Settings -->
-    <div class="control-section">
-        <div class="section-title">Performance</div>
-        <div class="control-group">
-            <label class="control-label">Resolution</label>
-            <div class="slider-container">
-                <input type="range" class="slider" id="performanceSlider" min="0" max="5" step="1" value="1">
-                <div class="slider-value" id="performanceValue">Balanced</div>
-            </div>
-            <div class="stats-text" id="performanceInfo">Resolution: calculating...</div>
-        </div>
-        
-        <div class="control-group">
-            <label class="control-label">Frame Rate</label>
-            <div class="slider-container">
-                <input type="range" class="slider" id="fpsSlider" min="15" max="60" step="15" value="30">
-                <div class="slider-value" id="fpsValue">30 FPS</div>
-            </div>
-        </div>
-    </div>
+  </div>
 </div>
 
 <script>
-
 'use strict';
 
-// ===== CONFIGURATION =====
-const CONFIG = Object.freeze({
-    wave: {
-        maxAmplitude: 100,
-        timeStep: 0.2,
-        defaults: {
-            strength: 60,
-            frequency: 0.02,
-            speed: 1.0,
-            waveType: 'sine',
-            velocity: 0
-        }
-    },
-    performance: {
-        levels: [
-            { skip: 1, label: 'Quality' },
-            { skip: 2, label: 'Balanced' },
-            { skip: 4, label: 'Fast' },
-            { skip: 8, label: 'Faster' },
-            { skip: 16, label: 'Very Fast' },
-            { skip: 32, label: 'Ultra Fast' }
-        ],
-        default: 1
-    },
-    colors: {
-        hue1: 240,
-        hue2: 0,
-        saturation: 70,
-        lightness: 50,
-        useColor: false
-    },
-    medium: {
-        fade: 0.008
-    },
-    interaction: {
-        pointRadius: 20,
-        visualRadius: 6,
-        dragThreshold: 5,
-        longPressTime: 500,
-        moveThreshold: 10,
-        cloneMargin: 30,
-        cloneMinDistance: 40,
-        patternMargin: 50
-    },
-    animation: {
-        targetFPS: 30,
-        minFPS: 15,
-        maxFPS: 60
-    },
-    ui: {
-        sliders: {
-            pointStrength: { min: 10, max: 100, step: 5, decimals: 0 },
-            pointFrequency: { min: 0.005, max: 0.08, step: 0.005, decimals: 3 },
-            pointSpeed: { min: 0.1, max: 1.0, step: 0.1, decimals: 1 },
-            pointVelocity: { min: 0, max: 50, step: 5, decimals: 0 }
-        }
-    }
-});
+/* ============================== CONFIG ============================== */
+const CONFIG = {
+  maxPoints: 36,
+  pointVisualRadius: 12,
+  pointHitRadius: 25,
+  pointBorderWidth: 2,
+  longPressDuration: 500,
+  frameInterval: 20,
+  minPointDistance: 40,
+  defaults:{
+    amplitude:60, wavelength:100, speed:1.0, waveType:'sine',
+    performanceLevel:2, damping:0.008, showPoints:false
+  },
+  ranges:{
+    amplitude:{min:10,max:100,mid:55},
+    wavelength:{min:20,max:400,mid:210},
+    speed:{min:0.1,max:1.0,mid:0.55},
+    hue1:{min:0,max:360,mid:180},
+    hue2:{min:0,max:360,mid:180},
+    phaseOffset:{min:-2,max:2,mid:0},
+    damping:{min:0.0,max:0.03,mid:0.015},
+    performance:{min:0,max:5,mid:3},
+    patternCount:{min:3,max:36,mid:20},
+    patternScale:{min:0.3,max:2.0,mid:1.15},
+    timeMultiplier:{min:0.0,max:30.0,mid:10.0}
+  },
+  performanceLevels:[
+    {skip:1,label:'Quality'},{skip:2,label:'Balanced'},{skip:4,label:'Fast'},
+    {skip:8,label:'Faster'},{skip:16,label:'Very Fast'},{skip:32,label:'Ultra Fast'}
+  ],
+  panelNames:['Quick Controls','Medium Properties','Pattern Generator','Edit Points','Point List']
+};
 
-// ===== UTILITIES MODULE =====
+/* ============================== UTILS ============================== */
 const Utils = {
-    math: {
-        clamp: (val, min, max) => Math.max(min, Math.min(max, val)),
-        distance: (x1, y1, x2, y2) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2),
-        formatValue: (val, decimals = 3) => Number(val).toFixed(decimals),
-        radToDeg: (rad) => (rad * 180 / Math.PI).toFixed(0),
-        degToRad: (deg) => deg * Math.PI / 180
-    },
-    
-    id: {
-        generate: () => `point_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    },
-    
-    feedback: {
-        haptic: () => {
-            if ('vibrate' in navigator) {
-                navigator.vibrate(10);
-            }
-        },
-        
-        visual: (x, y, className, duration = 500) => {
-            const element = document.createElement('div');
-            element.className = `visual-indicator ${className}`;
-            element.style.left = `${x}px`;
-            element.style.top = `${y}px`;
-            document.body.appendChild(element);
-            setTimeout(() => element.remove(), duration);
-            return element;
-        }
-    },
-    
-    color: {
-        lerpHue: (hue1, hue2, t) => {
-            let diff = Math.abs(hue1 - hue2);
-            if (diff > 180) {
-                if (hue2 > hue1) hue1 += 360;
-                else hue2 += 360;
-            }
-            return Math.round((hue1 + (hue2 - hue1) * t) % 360);
-        },
-        
-        hslToRgb: (h, s, l) => {
-            h /= 360;
-            s /= 100;
-            l /= 100;
-            const c = (1 - Math.abs(2 * l - 1)) * s;
-            const x = c * (1 - Math.abs((h * 6) % 2 - 1));
-            const m = l - c / 2;
-            
-            let r, g, b;
-            if (h < 1/6) [r, g, b] = [c, x, 0];
-            else if (h < 2/6) [r, g, b] = [x, c, 0];
-            else if (h < 3/6) [r, g, b] = [0, c, x];
-            else if (h < 4/6) [r, g, b] = [0, x, c];
-            else if (h < 5/6) [r, g, b] = [x, 0, c];
-            else [r, g, b] = [c, 0, x];
-            
-            return {
-                r: Math.round((r + m) * 255),
-                g: Math.round((g + m) * 255),
-                b: Math.round((b + m) * 255)
-            };
-        }
-    },
-    
-    storage: {
-        save: (key, value) => {
-            try {
-                localStorage.setItem(key, JSON.stringify(value));
-            } catch (e) {
-                console.warn('Failed to save to localStorage:', e);
-            }
-        },
-        
-        load: (key, defaultValue = null) => {
-            try {
-                const item = localStorage.getItem(key);
-                return item ? JSON.parse(item) : defaultValue;
-            } catch (e) {
-                console.warn('Failed to load from localStorage:', e);
-                return defaultValue;
-            }
-        }
+  clamp:(v,min,max)=>Math.max(min,Math.min(max,v)),
+  distance:(x1,y1,x2,y2)=>Math.hypot(x2-x1,y2-y1),
+  formatValue:(v,d=3)=>Number(v).toFixed(d),
+  generateId:()=>`point_${Date.now()}_${Math.random().toString(36).slice(2,9)}`,
+  haptic:()=>{ if('vibrate' in navigator) navigator.vibrate(10); },
+  showVisual:(x,y,cls,dur=500)=>{ const el=document.createElement('div'); el.className=`visual-indicator ${cls}`; el.style.left=`${x}px`; el.style.top=`${y}px`; document.body.appendChild(el); setTimeout(()=>el.remove(),dur); },
+  snapToGrid:(x,y,gs)=>({x:Math.round(x/gs)*gs,y:Math.round(y/gs)*gs}),
+  formatInputValue:(value,fieldType)=>{
+    switch(fieldType){
+      case 'amplitude':case 'wavelength':case 'patternCount':case 'performance':case 'hue1':case 'hue2':
+        return Math.round(value).toString();
+      case 'damping': return Utils.formatValue(value,3);
+      case 'timeMultiplier': return Utils.formatValue(value,1);
+      case 'speed':case 'patternScale':case 'phaseOffset': return Utils.formatValue(value,1);
+      default: return String(value);
     }
+  },
+  validateNumericInput:(value,fieldType)=>{
+    const r=CONFIG.ranges[fieldType]; if(!r) return value;
+    const n=parseFloat(value); if(Number.isNaN(n)) return r.mid;
+    return Utils.clamp(n,r.min,r.max);
+  }
 };
 
-// ===== BASE CLASSES =====
-class EventEmitter {
-    constructor() {
-        this.listeners = new Map();
+/* ======================== Pattern Generator ======================== */
+class PatternGenerator{
+  static generate(type,count,bounds,scale=1){
+    const cx=bounds.width/2, cy=bounds.height/2;
+    const maxRadius=Math.min(bounds.width,bounds.height)*0.4*scale;
+    switch(type){
+      case 'grid': return this.generateGrid(count,bounds,scale);
+      case 'radial':return this.generateRadial(count,cx,cy,maxRadius);
+      case 'spiral':return this.generateSpiral(count,cx,cy,maxRadius);
+      case 'sunflower':return this.generateSunflower(count,cx,cy,maxRadius);
+      default:return this.generateGrid(count,bounds,scale);
     }
-    
-    on(event, callback) {
-        if (!this.listeners.has(event)) {
-            this.listeners.set(event, []);
-        }
-        this.listeners.get(event).push(callback);
-        return this;
+  }
+  static generateGrid(count,bounds,scale){
+    const cols=Math.ceil(Math.sqrt(count)), rows=Math.ceil(count/cols);
+    const margin=30, w=bounds.width-2*margin, h=bounds.height-2*margin;
+    const dx=w/(cols+1), dy=h/(rows+1);
+    const pts=[]; let idx=0;
+    for(let r=1;r<=rows;r++){
+      for(let c=1;c<=cols;c++){
+        if(idx++>=count) break;
+        pts.push({x:margin+c*dx*scale,y:margin+r*dy*scale});
+      }
     }
-    
-    emit(event, data) {
-        const callbacks = this.listeners.get(event);
-        if (callbacks) {
-            callbacks.forEach(cb => cb(data));
-        }
-        return this;
-    }
+    return pts;
+  }
+  static generateRadial(count,cx,cy,maxR){
+    const pts=[]; const maxA=2*Math.PI;
+    for(let i=0;i<count;i++){ const t=(i/count)*maxA; const r=(i/(count-1||1))*maxR; pts.push({x:cx+r*Math.cos(t),y:cy+r*Math.sin(t)}); }
+    return pts;
+  }
+  static generateSpiral(count,cx,cy,maxR){
+    const pts=[]; const maxA=4*Math.PI;
+    for(let i=0;i<count;i++){ const t=(i/count)*maxA; const r=(t/maxA)*maxR; pts.push({x:cx+r*Math.cos(t),y:cy+r*Math.sin(t)}); }
+    return pts;
+  }
+  static generateSunflower(count,cx,cy,maxR){
+    const pts=[]; const golden=Math.PI*(3-Math.sqrt(5));
+    for(let i=0;i<count;i++){ const th=i*golden; const r=Math.sqrt(i/(count-1||1))*maxR; pts.push({x:cx+r*Math.cos(th),y:cy+r*Math.sin(th)}); }
+    return pts;
+  }
 }
 
-// ===== PHYSICS MODULE =====
-const Physics = {
-    updatePosition(point, deltaTime, bounds) {
-        if (point.velocity === 0) return;
-        
-        point.x += point.vx * deltaTime;
-        point.y += point.vy * deltaTime;
-        
-        const margin = CONFIG.interaction.visualRadius;
-        
-        // Boundary collision
-        if (point.x <= margin || point.x >= bounds.width - margin) {
-            point.vx = point.x <= margin ? Math.abs(point.vx) : -Math.abs(point.vx);
-            point.x = Utils.math.clamp(point.x, margin, bounds.width - margin);
-        }
-        
-        if (point.y <= margin || point.y >= bounds.height - margin) {
-            point.vy = point.y <= margin ? Math.abs(point.vy) : -Math.abs(point.vy);
-            point.y = Utils.math.clamp(point.y, margin, bounds.height - margin);
-        }
-    },
-    
-    setRandomVelocity(point, speed) {
-        if (speed > 0) {
-            const angle = Math.random() * 2 * Math.PI;
-            point.vx = Math.cos(angle) * speed;
-            point.vy = Math.sin(angle) * speed;
-        } else {
-            point.vx = point.vy = 0;
-        }
-    },
-    
-    findRandomPosition(points, bounds) {
-        const { cloneMargin: margin, cloneMinDistance: minDist } = CONFIG.interaction;
-        const maxAttempts = 50;
-        
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            const x = margin + Math.random() * (bounds.width - 2 * margin);
-            const y = margin + Math.random() * (bounds.height - 2 * margin);
-            
-            const tooClose = Array.from(points).some(point => 
-                Utils.math.distance(x, y, point.x, point.y) < minDist
-            );
-            
-            if (!tooClose) return { x, y };
-        }
-        
-        return {
-            x: margin + Math.random() * (bounds.width - 2 * margin),
-            y: margin + Math.random() * (bounds.height - 2 * margin)
-        };
-    }
-};
+/* ======================== Physics: WavePoint ======================= */
+/* Based on real implementation from Wave_1-7.html. 2 */
+class WavePoint{
+  constructor(x,y,properties={}){
+    this.id=Utils.generateId();
+    this.x=x; this.y=y; this.startTime=0; this.selected=false;
+    this.amplitude=properties.amplitude ?? CONFIG.defaults.amplitude;
+    this.wavelength=properties.wavelength ?? CONFIG.defaults.wavelength;
+    this.speed=properties.speed ?? CONFIG.defaults.speed;
+    this.waveType=properties.waveType ?? CONFIG.defaults.waveType;
+    this.phaseOffset=properties.phaseOffset ?? 0;
+    this.creationIndex=properties.creationIndex ?? 0;
 
-// ===== WAVE MATHEMATICS =====
-const WaveMath = {
-    sine: (phase, amplitude) => amplitude * Math.sin(phase),
-    
-    step: (phase, amplitude) => {
-        const normalized = ((phase % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
-        return amplitude * (normalized < Math.PI ? 1 : -1);
-    },
-    
-    applyFade: (value, distance, fadeRate) => value * Math.exp(-distance * fadeRate),
-    
-    toColor(waveValue, colorSettings) {
-        if (!colorSettings.useColor) {
-            const normalized = waveValue / CONFIG.wave.maxAmplitude;
-            return Utils.math.clamp(128 + normalized * 127, 0, 255);
-        }
-        
-        const normalizedValue = Utils.math.clamp(
-            (waveValue / CONFIG.wave.maxAmplitude + 1) / 2, 0, 1
-        );
-        const interpolatedHue = Utils.color.lerpHue(
-            colorSettings.hue1, colorSettings.hue2, normalizedValue
-        );
-        return Utils.color.hslToRgb(
-            interpolatedHue, colorSettings.saturation, colorSettings.lightness
-        );
-    }
-};
-
-// ===== PATTERN GENERATOR =====
-const PatternGenerator = {
-    patterns: {
-        grid(count, cx, cy, maxRadius, scale) {
-            const points = [];
-            const gridSize = Math.ceil(Math.sqrt(count));
-            const spacing = (maxRadius * 2 / (gridSize + 1)) * scale;
-            const startX = cx - (gridSize - 1) * spacing / 2;
-            const startY = cy - (gridSize - 1) * spacing / 2;
-            
-            for (let i = 0; i < gridSize * gridSize && points.length < count; i++) {
-                const row = Math.floor(i / gridSize);
-                const col = i % gridSize;
-                points.push({
-                    x: startX + col * spacing,
-                    y: startY + row * spacing
-                });
-            }
-            return points;
-        },
-        
-        radial(count, cx, cy, maxRadius, scale) {
-            const points = [];
-            const rings = Math.min(4, Math.ceil(count / 8));
-            const pointsPerRing = Math.ceil(count / rings);
-            
-            for (let ring = 0; ring < rings; ring++) {
-                const radius = ((ring + 1) / rings) * maxRadius * scale;
-                const ringCount = Math.min(pointsPerRing, count - points.length);
-                
-                for (let i = 0; i < ringCount; i++) {
-                    const angle = (i / ringCount) * 2 * Math.PI - Math.PI / 2;
-                    points.push({
-                        x: cx + radius * Math.cos(angle),
-                        y: cy + radius * Math.sin(angle)
-                    });
-                }
-            }
-            return points;
-        },
-        
-        spiral(count, cx, cy, maxRadius, scale) {
-            const points = [];
-            const maxAngle = 4 * Math.PI;
-            
-            for (let i = 0; i < count; i++) {
-                const t = (i / count) * maxAngle;
-                const radius = (t / maxAngle) * maxRadius * scale;
-                points.push({
-                    x: cx + radius * Math.cos(t),
-                    y: cy + radius * Math.sin(t)
-                });
-            }
-            return points;
-        },
-        
-        sunflower(count, cx, cy, maxRadius, scale) {
-            const points = [];
-            const golden = Math.PI * (3 - Math.sqrt(5));
-            
-            for (let i = 0; i < count; i++) {
-                const theta = i * golden;
-                const radius = Math.sqrt(i / count) * maxRadius * scale;
-                points.push({
-                    x: cx + radius * Math.cos(theta),
-                    y: cy + radius * Math.sin(theta)
-                });
-            }
-            return points;
-        }
-    },
-    
-    generate(type, count, bounds, scale = 1.0) {
-        const cx = bounds.width / 2;
-        const cy = bounds.height / 2;
-        const maxRadius = Math.min(bounds.width, bounds.height) / 2 - CONFIG.interaction.patternMargin;
-        
-        const generator = this.patterns[type];
-        return generator ? generator(count, cx, cy, maxRadius, scale) : [];
-    }
-};
-
-// ===== WAVE POINT =====
-class WavePoint {
-    constructor(x, y, properties = {}) {
-        this.id = Utils.id.generate();
-        this.x = x;
-        this.y = y;
-        this.startTime = 0;
-        this.selected = false;
-        this.vx = 0;
-        this.vy = 0;
-        
-        Object.assign(this, CONFIG.wave.defaults, properties);
-        
-        if (this.velocity > 0) {
-            Physics.setRandomVelocity(this, this.velocity);
-        }
-    }
-    
-    getProperties() {
-        return {
-            strength: this.strength,
-            frequency: this.frequency,
-            speed: this.speed,
-            waveType: this.waveType,
-            velocity: this.velocity
-        };
-    }
-    
-    updateVelocity(newVelocity) {
-        const oldVelocity = this.velocity;
-        this.velocity = newVelocity;
-        
-        if (newVelocity === 0) {
-            this.vx = this.vy = 0;
-        } else if (oldVelocity === 0) {
-            Physics.setRandomVelocity(this, newVelocity);
-        } else {
-            const scale = newVelocity / oldVelocity;
-            this.vx *= scale;
-            this.vy *= scale;
-        }
-    }
-    
-    updateProperty(key, value) {
-        if (key === 'velocity') {
-            this.updateVelocity(value);
-        } else if (key in CONFIG.wave.defaults) {
-            this[key] = value;
-        } else {
-            return false;
-        }
-        return true;
-    }
-    
-    distanceTo(x, y) {
-        return Utils.math.distance(this.x, this.y, x, y);
-    }
-    
-    isHit(x, y) {
-        return this.distanceTo(x, y) <= CONFIG.interaction.pointRadius;
-    }
-    
-    getDisplayName() {
-        return `Point ${this.id.split('_')[1].slice(-3)}`;
-    }
+    // deletion visuals
+    this.inDeletionZone=false;
+    this.deletionTimer=null;
+  }
+  isHit(px,py){ return Utils.distance(this.x,this.y,px,py) <= CONFIG.pointHitRadius; }
+  distanceTo(px,py){ return Utils.distance(this.x,this.y,px,py); }
+  getDisplayName(){ return this.id.replace('point_','P'); }
 }
 
-// ===== MANAGERS =====
-class PointManager extends EventEmitter {
-    constructor() {
-        super();
-        this.points = new Map();
-        this.selectedId = null;
+/* ========================= Physics: Engine ========================= */
+/* Real math merged from Wave_1-7.html. 3 */
+class WaveEngine{
+  constructor(){
+    this.points=new Map();
+    this.time=0;
+    this.pointPhaseOffset=0;
+    this.mediumDamping=CONFIG.defaults.damping;
+    this.creationCounter=0;
+    this.hue1=185; this.hue2=285; this.useColor=false;
+    this.timeMultiplier=10.0;
+  }
+  addPoint(x,y,properties={}){
+    if(this.points.size>=CONFIG.maxPoints){ Utils.haptic(); return null; }
+    const point=new WavePoint(x,y,{
+      ...properties,
+      creationIndex:this.creationCounter++,
+      phaseOffset:this.pointPhaseOffset*(this.creationCounter-1)
+    });
+    point.startTime=this.time;
+    this.points.set(point.id,point);
+    return point;
+  }
+  removePoint(id){ return this.points.delete(id); }
+  getPoint(id){ return this.points.get(id); }
+  getAllPoints(){ return Array.from(this.points.values()); }
+  findPointAt(x,y){ for(const p of this.points.values()){ if(p.isHit(x,y)) return p; } return null; }
+  clearAll(){ this.points.clear(); this.time=0; this.creationCounter=0; }
+  syncPoints(){
+    this.time=0; this.pointPhaseOffset=0;
+    for(const p of this.points.values()){ p.startTime=0; p.phaseOffset=0; }
+  }
+  applyPointPhaseOffsets(){
+    const pts=this.getAllPoints().sort((a,b)=>a.creationIndex-b.creationIndex);
+    pts.forEach((p,i)=>{ p.phaseOffset=this.pointPhaseOffset*i; });
+  }
+  updateTime(dt){ this.time += dt * this.timeMultiplier; }
+  setTimeMultiplier(m){ this.timeMultiplier=m; }
+  setColorMode(e){ this.useColor=e; }
+  setColors(h1,h2){ this.hue1=h1; this.hue2=h2; }
+  setHues(h1,h2){ this.hue1=h1; this.hue2=h2; }
+  setPointPhaseOffset(o){ this.pointPhaseOffset=o; this.applyPointPhaseOffsets(); }
+  setDamping(d){ this.mediumDamping=d; }
+
+  calculatePixel(x,y){
+    let total=0;
+    for(const p of this.points.values()){
+      const age=this.time - p.startTime; if(age<0) continue;
+      const dist=p.distanceTo(x,y);
+      const k=(2*Math.PI)/p.wavelength;
+      const phase= k*dist - (p.speed*k)*age + p.phaseOffset;
+      let val;
+      if(p.waveType==='sine'){ val = p.amplitude*Math.sin(phase); }
+      else{
+        const norm=((phase%(2*Math.PI)) + 2*Math.PI)%(2*Math.PI);
+        val = p.amplitude * (norm < Math.PI ? 1 : -1);
+      }
+      val *= Math.exp(-dist * this.mediumDamping);
+      total += val;
     }
-    
-    add(x, y, properties = {}) {
-        const point = new WavePoint(x, y, properties);
-        this.points.set(point.id, point);
-        this.emit('change', { type: 'add', point });
-        return point;
+    return this.waveToColor(total);
+  }
+  waveToColor(v){
+    if(!this.useColor){
+      const normalized = v/100;
+      return Utils.clamp(128 + normalized*127, 0, 255);
     }
-    
-    remove(id) {
-        if (this.selectedId === id) this.selectedId = null;
-        const removed = this.points.delete(id);
-        if (removed) this.emit('change', { type: 'remove', id });
-        return removed;
-    }
-    
-    clear() {
-        this.points.clear();
-        this.selectedId = null;
-        this.emit('change', { type: 'clear' });
-    }
-    
-    select(id) {
-        const prevId = this.selectedId;
-        if (prevId) {
-            const prev = this.points.get(prevId);
-            if (prev) prev.selected = false;
-        }
-        
-        this.selectedId = id;
-        const point = this.points.get(id);
-        if (point) {
-            point.selected = true;
-            this.emit('select', point);
-        }
-        return point;
-    }
-    
-    deselect() {
-        if (this.selectedId) {
-            const point = this.points.get(this.selectedId);
-            if (point) point.selected = false;
-            this.selectedId = null;
-            this.emit('select', null);
-        }
-    }
-    
-    getSelected() {
-        return this.selectedId ? this.points.get(this.selectedId) : null;
-    }
-    
-    findPointAt(x, y) {
-        for (const point of this.points.values()) {
-            if (point.isHit(x, y)) return point;
-        }
-        return null;
-    }
-    
-    updatePositions(deltaTime, bounds) {
-        for (const point of this.points.values()) {
-            Physics.updatePosition(point, deltaTime, bounds);
-        }
-    }
-    
-    getAllPoints() {
-        return Array.from(this.points.values());
-    }
-    
-    get count() {
-        return this.points.size;
-    }
-    
-    [Symbol.iterator]() {
-        return this.points.values();
-    }
+    const t = Utils.clamp((v/100 + 1)/2, 0, 1);
+    const hue = this.lerpHue(this.hue1,this.hue2,t);
+    return this.hslToRgb(hue,70,50);
+  }
+  lerpHue(h1,h2,t){
+    let d=Math.abs(h1-h2);
+    if(d>180){ if(h2>h1) h1+=360; else h2+=360; }
+    return Math.round((h1 + (h2-h1)*t) % 360);
+  }
+  hslToRgb(h,s,l){
+    h/=360; s/=100; l/=100;
+    const c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h*6)%2-1)), m=l-c/2;
+    let r,g,b;
+    if(h<1/6){r=c;g=x;b=0}
+    else if(h<2/6){r=x;g=c;b=0}
+    else if(h<3/6){r=0;g=c;b=x}
+    else if(h<4/6){r=0;g=x;b=c}
+    else if(h<5/6){r=x;g=0;b=c}
+    else {r=c;g=0;b=x}
+    return {r:Math.round((r+m)*255), g:Math.round((g+m)*255), b:Math.round((b+m)*255)};
+  }
 }
 
-class AppState extends EventEmitter {
-    constructor() {
-        super();
-        
-        // Load saved template or use defaults
-        const savedTemplate = Utils.storage.load('waveTemplate', CONFIG.wave.defaults);
-        
-        this.state = {
-            time: 0,
-            isAnimating: false,
-            showPoints: false,
-            animatePoints: false,
-            mediumFade: CONFIG.medium.fade,
-            performanceLevel: CONFIG.performance.default,
-            phaseShift: 0,
-            timeScale: 1.0,
-            patternScale: 1.0,
-            patternTemplate: savedTemplate,
-            ...CONFIG.colors
-        };
-        
-        this.animation = {
-            targetFPS: CONFIG.animation.targetFPS,
-            frameInterval: 1000 / CONFIG.animation.targetFPS,
-            lastFrameTime: 0
-        };
+/* =========================== Renderer ============================== */
+/* Real renderer from Wave_1-7.html with UI-friendly helpers. 4 */
+class Renderer{
+  constructor(canvas){
+    this.canvas=canvas; this.ctx=canvas.getContext('2d');
+    this.imageData=null;
+    this.skipFactor=CONFIG.performanceLevels[CONFIG.defaults.performanceLevel].skip;
+    this.lastRenderTime=0;
+    this.resize();
+    window.addEventListener('resize',()=>this.resize());
+  }
+  resize(){
+    this.canvas.width=window.innerWidth;
+    this.canvas.height=window.innerHeight;
+    this.imageData=this.ctx.createImageData(this.canvas.width,this.canvas.height);
+  }
+  setPerformanceLevel(level){ this.skipFactor=CONFIG.performanceLevels[level].skip; }
+  clearCanvas(){
+    const d=this.imageData.data;
+    for(let i=0;i<d.length;i+=4){ d[i]=d[i+1]=d[i+2]=0; d[i+3]=255; }
+  }
+  renderWaveField(engine){
+    const t0=performance.now();
+    const {width,height}=this.canvas, skip=this.skipFactor;
+    for(let y=0;y<height;y+=skip){
+      for(let x=0;x<width;x+=skip){
+        const color=engine.calculatePixel(x,y);
+        this.fillBlock(x,y,color,skip);
+      }
     }
-    
-    set(key, value) {
-        if (this.state[key] !== value) {
-            this.state[key] = value;
-            this.emit('change', { key, value });
-            
-            // Save template when it changes
-            if (key === 'patternTemplate') {
-                Utils.storage.save('waveTemplate', value);
-            }
-        }
+    this.lastRenderTime = performance.now()-t0;
+  }
+  fillBlock(x0,y0,color,size){
+    const d=this.imageData.data, {width,height}=this.canvas;
+    for(let dy=0;dy<size && y0+dy<height;dy++){
+      for(let dx=0;dx<size && x0+dx<width;dx++){
+        const idx=((y0+dy)*width + (x0+dx))*4;
+        if(typeof color==='object'){ d[idx]=color.r; d[idx+1]=color.g; d[idx+2]=color.b; }
+        else { d[idx]=d[idx+1]=d[idx+2]=color; }
+      }
     }
-    
-    get(key) {
-        return this.state[key];
-    }
-    
-    setTemplate(properties) {
-        this.set('patternTemplate', { ...this.state.patternTemplate, ...properties });
-    }
-    
-    setFPS(fps) {
-        this.animation.targetFPS = Utils.math.clamp(
-            fps, CONFIG.animation.minFPS, CONFIG.animation.maxFPS
-        );
-        this.animation.frameInterval = 1000 / this.animation.targetFPS;
-        this.emit('change', { key: 'fps', value: this.animation.targetFPS });
-    }
-    
-    incrementTime() {
-        // Apply time scale to time increment
-        this.state.time += CONFIG.wave.timeStep * this.state.timeScale;
-    }
-    
-    resetTime() {
-        this.state.time = 0;
-    }
-    
-    shouldRender(currentTime) {
-        return this.state.isAnimating && 
-               (currentTime - this.animation.lastFrameTime) >= this.animation.frameInterval;
-    }
-    
-    getColorSettings() {
-        return {
-            useColor: this.state.useColor,
-            hue1: this.state.hue1,
-            hue2: this.state.hue2,
-            saturation: this.state.saturation,
-            lightness: this.state.lightness
-        };
-    }
+  }
+  renderGrid(engine){
+    const {width,height}=this.canvas, gs=this.skipFactor*10;
+    const baseOpacity=0.2 + (0.3 * (1 - engine.points.size/CONFIG.maxPoints));
+    this.ctx.strokeStyle=`rgba(255,255,255,${baseOpacity})`; this.ctx.lineWidth=1; this.ctx.beginPath();
+    for(let x=gs;x<width;x+=gs){ this.ctx.moveTo(x,0); this.ctx.lineTo(x,height); }
+    for(let y=gs;y<height;y+=gs){ this.ctx.moveTo(0,y); this.ctx.lineTo(width,y); }
+    this.ctx.stroke();
+  }
+  drawPoint(point){
+    const vr=CONFIG.pointVisualRadius, hr=CONFIG.pointHitRadius, bw=CONFIG.pointBorderWidth;
+    if(point.selected){ this.ctx.strokeStyle='#00ff88'; this.ctx.lineWidth=2; this.ctx.beginPath(); this.ctx.arc(point.x,point.y,hr,0,2*Math.PI); this.ctx.stroke(); }
+    let finalR=vr; let color='white';
+    if(point.inDeletionZone && point.deletionTimer){
+      const prog=Math.min((performance.now()-point.deletionTimer)/500,1);
+      const white=Math.floor(255*(1-prog));
+      color=`rgb(255,${white},${white})`;
+      finalR=vr + prog*4;
+    }else if(point.inDeletionZone){ color='#ff4444'; }
+    this.ctx.fillStyle='#333'; this.ctx.beginPath(); this.ctx.arc(point.x,point.y,finalR+bw,0,2*Math.PI); this.ctx.fill();
+    this.ctx.fillStyle=color; this.ctx.beginPath(); this.ctx.arc(point.x,point.y,finalR,0,2*Math.PI); this.ctx.fill();
+  }
+  renderPoints(points,showPoints,selectedPoint){
+    if(showPoints){ points.forEach(p=>this.drawPoint(p)); }
+    else if(selectedPoint){ this.drawPoint(selectedPoint); }
+  }
+  getPerformanceInfo(){
+    const cfg=CONFIG.performanceLevels.find(l=>l.skip===this.skipFactor) || {label:'Custom',skip:this.skipFactor};
+    const w=Math.floor(window.innerWidth/this.skipFactor), h=Math.floor(window.innerHeight/this.skipFactor);
+    const speedup=this.skipFactor===1?'':` (${this.skipFactor**2}x faster)`;
+    return {label:cfg.label, resolution:`${w}×${h}${speedup}`, renderTime:this.lastRenderTime.toFixed(1)};
+  }
+  render(engine,showPoints,showGrid,selectedPoint){
+    this.clearCanvas();
+    if(engine.points.size>0) this.renderWaveField(engine);
+    this.ctx.putImageData(this.imageData,0,0);
+    if(showGrid) this.renderGrid(engine);
+    this.renderPoints(engine.getAllPoints(),showPoints,selectedPoint);
+  }
 }
 
-// ===== RENDERERS =====
-class WaveFieldRenderer {
-    constructor(canvas) {
-        this.canvas = canvas;
-        this.ctx = canvas.getContext('2d');
-        this.skipFactor = CONFIG.performance.levels[CONFIG.performance.default].skip;
-        this.resize();
+/* ========================= Animation Manager ====================== */
+/* From bottom-sheet prototype, compatible with real engine. 5 */
+class AnimationManager{
+  constructor(renderer,engine){
+    this.renderer=renderer; this.engine=engine;
+    this.isAnimating=false; this.animationId=null;
+    this.lastFrameTime=0; this.frameInterval=CONFIG.frameInterval;
+    this.showPoints=CONFIG.defaults.showPoints; this.showGrid=false;
+    this.selectedPoint=null; this.fps=60; this.frameCount=0;
+    setInterval(()=>{ this.fps=this.frameCount; this.frameCount=0; },1000);
+  }
+  start(){ if(this.isAnimating) return; this.isAnimating=true; this.lastFrameTime=performance.now(); this.animate(); }
+  stop(){ this.isAnimating=false; if(this.animationId){ cancelAnimationFrame(this.animationId); this.animationId=null; } }
+  setSelectedPoint(p){ this.selectedPoint=p; }
+  setShowPoints(v){ this.showPoints=v; }
+  setShowGrid(v){ this.showGrid=v; }
+  forceRender(){ this.renderer.render(this.engine,this.showPoints,this.showGrid,this.selectedPoint); }
+  animate(){
+    if(!this.isAnimating) return;
+    const now=performance.now();
+    const dt=now - this.lastFrameTime;
+    if(dt>=this.frameInterval){
+      this.engine.updateTime(dt/1000);
+      this.renderer.render(this.engine,this.showPoints,this.showGrid,this.selectedPoint);
+      this.lastFrameTime=now; this.frameCount++;
     }
-    
-    resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-        this.imageData = this.ctx.createImageData(this.canvas.width, this.canvas.height);
-    }
-    
-    setPerformanceLevel(level) {
-        this.skipFactor = CONFIG.performance.levels[level].skip;
-    }
-    
-    render(points, mediumFade, time, phaseShift, colorSettings) {
-        this.clearCanvas();
-        if (points.count > 0) {
-            this.renderWaveField(points, mediumFade, time, phaseShift, colorSettings);
-        }
-        this.ctx.putImageData(this.imageData, 0, 0);
-    }
-    
-    clearCanvas() {
-        const data = this.imageData.data;
-        for (let i = 0; i < data.length; i += 4) {
-            data[i] = data[i + 1] = data[i + 2] = 0;
-            data[i + 3] = 255;
-        }
-    }
-    
-    renderWaveField(points, mediumFade, time, phaseShift, colorSettings) {
-        const { width, height } = this.canvas;
-        const skip = this.skipFactor;
-        
-        for (let y = 0; y < height; y += skip) {
-            for (let x = 0; x < width; x += skip) {
-                const color = this.calculatePixel(x, y, points, mediumFade, time, phaseShift, colorSettings);
-                this.fillBlock(x, y, color, skip);
-            }
-        }
-    }
-    
-    calculatePixel(x, y, points, mediumFade, time, phaseShift, colorSettings) {
-        let totalWave = 0;
-        
-        for (const point of points) {
-            const age = time - point.startTime;
-            if (age < 0) continue;
-            
-            const distance = point.distanceTo(x, y);
-            // Apply phase shift to the wave calculation
-            const phase = point.frequency * distance - point.speed * age + phaseShift;
-            
-            const waveFunc = point.waveType === 'sine' ? WaveMath.sine : WaveMath.step;
-            let waveValue = waveFunc(phase, point.strength);
-            waveValue = WaveMath.applyFade(waveValue, distance, mediumFade);
-            
-            totalWave += waveValue;
-        }
-        
-        return WaveMath.toColor(totalWave, colorSettings);
-    }
-    
-    fillBlock(startX, startY, color, size) {
-        const data = this.imageData.data;
-        const { width, height } = this.canvas;
-        
-        for (let dy = 0; dy < size && startY + dy < height; dy++) {
-            for (let dx = 0; dx < size && startX + dx < width; dx++) {
-                const index = ((startY + dy) * width + (startX + dx)) * 4;
-                
-                if (typeof color === 'object') {
-                    data[index] = color.r;
-                    data[index + 1] = color.g;
-                    data[index + 2] = color.b;
-                } else {
-                    data[index] = data[index + 1] = data[index + 2] = color;
-                }
-            }
-        }
-    }
+    this.animationId=requestAnimationFrame(()=>this.animate());
+  }
 }
 
-class PointRenderer {
-    constructor(canvas) {
-        this.canvas = canvas;
-        this.ctx = canvas.getContext('2d');
-    }
-    
-    render(points, showPoints) {
-        const selected = points.getSelected();
-        
-        if (showPoints) {
-            for (const point of points) {
-                this.drawPoint(point);
-            }
-        } else if (selected) {
-            this.drawPoint(selected);
-        }
-    }
-    
-    drawPoint(point) {
-        const { visualRadius, pointRadius } = CONFIG.interaction;
-        
-        if (point.selected) {
-            this.ctx.strokeStyle = '#00ff88';
-            this.ctx.lineWidth = 2;
-            this.ctx.beginPath();
-            this.ctx.arc(point.x, point.y, pointRadius, 0, 2 * Math.PI);
-            this.ctx.stroke();
-        }
-        
-        this.ctx.fillStyle = point.selected ? '#00ff88' : 
-                             point.velocity > 0 ? '#ff8844' : '#ff4444';
-        this.ctx.beginPath();
-        this.ctx.arc(point.x, point.y, visualRadius, 0, 2 * Math.PI);
-        this.ctx.fill();
-    }
+/* =========================== Input Controller ===================== */
+class InputController{
+  getFieldType(id){
+    const map={
+      pointAmplitude:'amplitude', pointWavelength:'wavelength', pointSpeed:'speed',
+      hue1Slider:'hue1', hue2Slider:'hue2', pointPhaseOffsetSlider:'phaseOffset',
+      dampingSlider:'damping', performanceSlider:'performance',
+      patternCount:'patternCount', patternScale:'patternScale',
+      timeMultiplierSlider:'timeMultiplier'
+    }; return map[id]||id;
+  }
+  registerSliderPair(sliderId,inputId,handler){
+    const slider=document.getElementById(sliderId);
+    const input=document.getElementById(inputId);
+    if(!slider||!input) return;
+    const field=this.getFieldType(sliderId);
+    slider.addEventListener('input',e=>{ const v=parseFloat(e.target.value); input.value=Utils.formatInputValue(v,field); handler(v); });
+    input.addEventListener('input',e=>{ const n=parseFloat(e.target.value); if(!Number.isNaN(n)){ const v=Utils.validateNumericInput(n,field); slider.value=v; handler(v);} });
+    input.addEventListener('blur',e=>{ const v=Utils.validateNumericInput(e.target.value,field); slider.value=v; input.value=Utils.formatInputValue(v,field); handler(v); });
+  }
+  updatePair(sliderId,inputId,value){
+    const s=document.getElementById(sliderId), i=document.getElementById(inputId);
+    const field=this.getFieldType(sliderId);
+    if(s) s.value=value; if(i) i.value=Utils.formatInputValue(value,field);
+  }
 }
 
-// ===== UI CONTROLLER =====
-class UIController {
-    constructor() {
-        this.elements = new Map();
-        this.panelOpen = false;
-        this.init();
-    }
-    
-    init() {
-        this.cacheElements();
-        this.setupBaseEvents();
-    }
-    
-    cacheElements() {
-        const ids = [
-            // Core elements
-            'menuToggle', 'panelOverlay', 'controlPanel', 'welcomeOverlay', 'welcomeStartBtn',
-            // Animation controls
-            'clearBtn', 'playPauseBtn', 'syncBtn', 'showPointsBtn', 'animatePointsBtn', 'stats',
-            // Pattern generator
-            'patternType', 'patternCount', 'patternCountValue', 'patternScale', 'patternScaleValue',
-            'scaleInfo', 'generatePatternBtn',
-            // Wave template
-            'templateStrength', 'templateStrengthValue', 'templateFrequency', 'templateFrequencyValue',
-            'templateSpeed', 'templateSpeedValue', 'templateWaveType',
-            // Global wave control
-            'phaseShift', 'phaseShiftValue', 'phaseInfo', 'timeScale', 'timeScaleValue', 'timeInfo',
-            'resetGlobalBtn',
-            // Point list
-            'pointList', 'selectedPointSection', 'selectedPointId', 'pointWaveTypeBtn',
-            'pointStrength', 'pointFrequency', 'pointSpeed', 'pointVelocity',
-            'clonePointBtn', 'deletePointBtn',
-            // Medium and color
-            'fadeSlider', 'fadeValue', 'colorModeBtn', 
-            'hue1Slider', 'hue2Slider', 'hue1Value', 'hue2Value',
-            'complementaryBtn', 'gradientPreview', 'colorControls', 'colorControls2',
-            'colorButtons', 'colorPreview',
-            // Performance
-            'performanceSlider', 'performanceValue', 'performanceInfo', 
-            'fpsSlider', 'fpsValue',
-            // Other
-            'longPressIndicator'
-        ];
-        
-        // Add value display elements for point controls
-        Object.keys(CONFIG.ui.sliders).forEach(key => {
-            ids.push(`${key}Value`);
-        });
-        
-        ids.forEach(id => {
-            const element = document.getElementById(id);
-            if (element) this.elements.set(id, element);
-        });
-    }
-    
-    setupBaseEvents() {
-        this.on('menuToggle', 'click', () => this.togglePanel());
-        this.on('panelOverlay', 'click', () => this.closePanel());
-        this.on('welcomeStartBtn', 'click', () => this.hideWelcome());
-        
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape' && this.panelOpen) {
-                this.closePanel();
-            }
-        });
-    }
-    
-    on(elementId, event, handler) {
-        const element = this.elements.get(elementId);
-        if (element) {
-            element.addEventListener(event, handler);
-        }
-    }
-    
-    get(elementId) {
-        return this.elements.get(elementId);
-    }
-    
-    setText(elementId, text) {
-        const element = this.elements.get(elementId);
-        if (element) element.textContent = String(text);
-    }
-    
-    setValue(elementId, value) {
-        const element = this.elements.get(elementId);
+/* ============================ Bottom Sheet ======================== */
+class BottomSheetController{
+  constructor(){
+    this.currentPanel=0; this.totalPanels=CONFIG.panelNames.length; this.isExpanded=false;
+    this.isDraggingHandle=false; this.dragStartY=0; this.initialTransform=0;
+    this.elements={
+      bottomSheet:document.getElementById('bottomSheet'),
+      sheetHandle:document.getElementById('sheetHandle'),
+      panelTitle:document.getElementById('panelTitleText'),
+      panelsContainer:document.getElementById('panelsContainer'),
+      panelNavigation:document.getElementById('panelNavigation'),
+      navSegments:[...document.querySelectorAll('.nav-segment')]
+    };
+    this.setupEventListeners(); this.updateUI();
+  }
+  setupEventListeners(){
+    if(this.elements.sheetHandle) this.setupHandleDrag();
+    if(this.elements.panelsContainer) this.setupScrollNavigation();
+    if(this.elements.navSegments) this.setupSegmentNavigation();
+    document.addEventListener('keydown',e=>{
+      if(e.key==='Escape' && this.isExpanded) this.collapse();
+      else if(this.isExpanded && e.key==='ArrowLeft') this.scrollToPreviousPanel();
+      else if(this.isExpanded && e.key==='ArrowRight') this.scrollToNextPanel();
+    });
+  }
+  setupSegmentNavigation(){ this.elements.navSegments.forEach((seg,i)=>seg.addEventListener('click',()=>this.scrollToPanel(i))); }
+  setupScrollNavigation(){
+    const c=this.elements.panelsContainer; let t;
+    c.addEventListener('scroll',()=>{ if(t) clearTimeout(t); t=setTimeout(()=>this.detectCurrentPanel(),150); this.detectCurrentPanel(); },{passive:true});
+  }
+  detectCurrentPanel(){
+    const c=this.elements.panelsContainer; const w=c.offsetWidth; const sl=c.scrollLeft;
+    const newPanel=Math.round(sl/w); const p=Math.max(0,Math.min(this.totalPanels-1,newPanel));
+    if(p!==this.currentPanel){ this.currentPanel=p; this.updateUI(); }
+  }
+  scrollToPanel(i){ if(i<0||i>=this.totalPanels) return; const c=this.elements.panelsContainer; c.scrollTo({left:i*c.offsetWidth,behavior:'smooth'}); }
+  scrollToNextPanel(){ this.scrollToPanel(this.currentPanel+1); }
+  scrollToPreviousPanel(){ this.scrollToPanel(this.currentPanel-1); }
+  setupHandleDrag(){
+    const sheet=this.elements.bottomSheet, handle=this.elements.sheetHandle;
+    const getY=ev=>('touches' in ev)?ev.touches[0].clientY:ev.clientY;
+    const onMove=ev=>{ if(!this.isDraggingHandle) return; const dy=getY(ev)-this.dragStartY; sheet.style.transform=`translateY(${this.initialTransform+dy}px)`; ev.preventDefault(); };
+    const onUp=()=>{ if(!this.isDraggingHandle) return; this.isDraggingHandle=false;
+      const rect=sheet.getBoundingClientRect(); const open= (window.innerHeight - rect.top) > 200;
+      open?this.expand():this.collapse();
+      window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp);
+      window.removeEventListener('touchmove',onMove); window.removeEventListener('touchend',onUp);
+    };
+    const onDown=ev=>{
+      this.isDraggingHandle=true; const st=getComputedStyle(sheet).transform;
+      const ty = st!=='none'? parseFloat(st.split(',')[5]) : (window.innerHeight - sheet.getBoundingClientRect().top);
+      this.initialTransform=ty; this.dragStartY=getY(ev);
+      window.addEventListener('mousemove',onMove,{passive:false});
+      window.addEventListener('mouseup',onUp); window.addEventListener('touchmove',onMove,{passive:false}); window.addEventListener('touchend',onUp);
+      ev.preventDefault();
+    };
+    handle.addEventListener('mousedown',onDown); handle.addEventListener('touchstart',onDown,{passive:false});
+  }
+  expand(){ this.isExpanded=true; this.elements.bottomSheet.style.transform='translateY(0)'; }
+  collapse(){ this.isExpanded=false; this.elements.bottomSheet.style.transform='translateY(calc(100% - 84px))'; }
+  updateUI(){
+    this.elements.panelTitle.textContent = CONFIG.panelNames[this.currentPanel] || 'Controls';
+    this.elements.navSegments.forEach((s,i)=>s.classList.toggle('active',i===this.currentPanel));
+  }
+  goToPanel(i){ this.scrollToPanel(i); }
+}
 
+/* ============================== UI Controller ===================== */
+/* Bottom-sheet UI wiring, unchanged API, drives real engine. 6 */
+class UIController{
+  constructor(engine,animationManager,renderer){
+    this.engine=engine; this.animationManager=animationManager; this.renderer=renderer;
+    this.selectedPointId=null; this.singleEditMode=false;
+    this.bottomSheet=new BottomSheetController();
+    this.inputController=new InputController();
+    this.setupEventListeners(); this.setupInputControls(); this.updatePerformanceInfo(); this.updatePointsUI();
+  }
+  setupEventListeners(){
+    const clearBtn=document.getElementById('clearBtn');
+    const syncBtn=document.getElementById('syncBtn');
+    const showPointsToggle=document.getElementById('showPointsToggle');
+    const showGridToggle=document.getElementById('showGridToggle');
+    const generatePatternBtn=document.getElementById('generatePatternBtn');
+    const pointWaveTypeToggle=document.getElementById('pointWaveTypeToggle');
+    const clonePointBtn=document.getElementById('clonePointBtn');
+    const deletePointBtn=document.getElementById('deletePointBtn');
+    const colorToggle=document.getElementById('colorToggle');
+    const singleEditMode=document.getElementById('singleEditMode');
+    const addBtn=document.getElementById('addBtn');
+
+    if(clearBtn) clearBtn.addEventListener('click',()=>this.clearAll());
+    if(syncBtn) syncBtn.addEventListener('click',()=>this.syncPoints());
+    if(showPointsToggle) showPointsToggle.addEventListener('click',()=>this.toggleShowPoints());
+    if(showGridToggle) showGridToggle.addEventListener('click',()=>this.toggleShowGrid());
+    if(generatePatternBtn) generatePatternBtn.addEventListener('click',()=>this.generatePattern());
+    if(pointWaveTypeToggle) pointWaveTypeToggle.addEventListener('click',()=>this.toggleWaveType());
+    if(clonePointBtn) clonePointBtn.addEventListener('click',()=>this.clonePoint());
+    if(deletePointBtn) deletePointBtn.addEventListener('click',()=>this.deletePoint());
+    if(colorToggle) colorToggle.addEventListener('click',()=>this.toggleColorMode());
+    if(singleEditMode) singleEditMode.addEventListener('change',(e)=>this.setSingleEditMode(e.target.checked));
+    if(addBtn) addBtn.addEventListener('click',()=>this.createRandomPoint());
+
+    document.addEventListener('keydown',(e)=>{
+      if(e.key==='Delete' || e.key==='Backspace'){ this.deletePoint(); }
+      if(e.key.toLowerCase()==='c'){ this.clonePoint(); }
+      if(e.key==='Escape'){ this.bottomSheet.collapse(); }
+    });
+  }
+  setupInputControls(){
+    this.inputController.registerSliderPair('timeMultiplierSlider','timeMultiplierValue',(v)=>this.engine.setTimeMultiplier(v));
+    this.inputController.registerSliderPair('dampingSlider','dampingValue',(v)=>this.engine.setDamping(v));
+    this.inputController.registerSliderPair('performanceSlider','performanceValue',(lvl)=>{ this.renderer.setPerformanceLevel(lvl); this.updatePerformanceInfo(); this.animationManager.forceRender(); });
+    this.inputController.registerSliderPair('hue1Slider','hue1Value',(v)=>{ this.engine.setHues(v, this.engine.hue2); this.updateGradient(); });
+    this.inputController.registerSliderPair('hue2Slider','hue2Value',(v)=>{ this.engine.setHues(this.engine.hue1, v); this.updateGradient(); });
+    this.inputController.registerSliderPair('pointAmplitude','pointAmplitudeValue',(v)=>this.updateSelectedPoints('amplitude',v));
+    this.inputController.registerSliderPair('pointWavelength','pointWavelengthValue',(v)=>this.updateSelectedPoints('wavelength',v));
+    this.inputController.registerSliderPair('pointSpeed','pointSpeedValue',(v)=>this.updateSelectedPoints('speed',v));
+    this.inputController.registerSliderPair('pointPhaseOffsetSlider','pointPhaseOffsetValue',(v)=>this.setPhaseOffsetForSelected(v*Math.PI));
+    this.initializeInputDisplays();
+  }
+  initializeInputDisplays(){
+    [['pointAmplitude','pointAmplitudeValue'],['pointWavelength','pointWavelengthValue'],['pointSpeed','pointSpeedValue'],
+     ['hue1Slider','hue1Value'],['hue2Slider','hue2Value'],['timeMultiplierSlider','timeMultiplierValue'],
+     ['pointPhaseOffsetSlider','pointPhaseOffsetValue'],['dampingSlider','dampingValue'],['performanceSlider','performanceValue'],
+     ['patternCount','patternCountValue'],['patternScale','patternScaleValue']]
+    .forEach(([s,i])=>{
+      const slider=document.getElementById(s), input=document.getElementById(i);
+      if(slider&&input){ const field=this.inputController.getFieldType(s); const val=parseFloat(slider.value); input.value=Utils.formatInputValue(val,field); }
+    });
+    this.updatePointPropertiesUI();
+  }
+  getSelectedPoint(){ return this.selectedPointId ? this.engine.getPoint(this.selectedPointId) : null; }
+  selectPoint(id){ this.selectedPointId=id; this.animationManager.setSelectedPoint(this.engine.getPoint(id)||null); this.updatePointPropertiesUI(); this.updatePointsUI(); }
+  clearSelection(){ this.selectedPointId=null; this.animationManager.setSelectedPoint(null); this.updatePointPropertiesUI(); this.updatePointsUI(); }
+  updatePointsUI(){
+    const list=document.getElementById('pointList'); const stats=document.getElementById('stats');
+    if(stats) stats.textContent=`Points: ${this.engine.points.size} / ${CONFIG.maxPoints}`;
+    if(!list) return;
+    list.innerHTML='';
+    const pts=this.engine.getAllPoints();
+    if(pts.length===0){ list.innerHTML='<div class="empty-state">No points created<br>Use + button or long-press on canvas</div>'; return; }
+    pts.forEach(p=>{
+      const row=document.createElement('div'); row.className='point-item';
+      const left=document.createElement('div'); left.textContent = `${p.getDisplayName()} • A:${Math.round(p.amplitude)}  λ:${Math.round(p.wavelength)}  v:${p.speed.toFixed(2)}`;
+      const right=document.createElement('div');
+      const selBtn=document.createElement('button'); selBtn.className='control-button'; selBtn.textContent='Select';
+      selBtn.onclick=()=>{ this.selectPoint(p.id); this.bottomSheet.goToPanel(3); };
+      const delBtn=document.createElement('button'); delBtn.className='control-button danger'; delBtn.textContent='Delete';
+      delBtn.onclick=()=>this.removePoint(p.id);
+      right.append(selBtn,delBtn); row.append(left,right); list.append(row);
+    });
+  }
+  updatePointPropertiesUI(){
+    const info=document.getElementById('selectedPointInfo');
+    const header=document.getElementById('selectedPointId');
+    const toggle=document.getElementById('pointWaveTypeToggle');
+    const pt=this.getSelectedPoint();
+    if(pt){ if(info) info.style.display='block'; if(header) header.textContent=pt.getDisplayName();
+      this.inputController.updatePair('pointAmplitude','pointAmplitudeValue',pt.amplitude);
+      this.inputController.updatePair('pointWavelength','pointWavelengthValue',pt.wavelength);
+      this.inputController.updatePair('pointSpeed','pointSpeedValue',pt.speed);
+      if(toggle) toggle.classList.toggle('active', pt.waveType==='sine');
+    }else{ if(info) info.style.display='none'; }
+  }
+  updateButton(id,on){ const el=document.getElementById(id); if(el) el.classList.toggle('active',!!on); }
+  toggleShowPoints(){ const el=document.getElementById('showPointsToggle'); el.classList.toggle('active'); this.animationManager.setShowPoints(el.classList.contains('active')); this.animationManager.forceRender(); }
+  toggleShowGrid(){ const el=document.getElementById('showGridToggle'); el.classList.toggle('active'); this.animationManager.setShowGrid(el.classList.contains('active')); this.animationManager.forceRender(); }
+  toggleWaveType(){
+    const pt=this.getSelectedPoint(); if(!pt){ return; }
+    pt.waveType = pt.waveType==='sine' ? 'square' : 'sine';
+    this.updatePointPropertiesUI(); this.animationManager.forceRender();
+  }
+  setPhaseOffsetForSelected(v){
+    const pt=this.getSelectedPoint();
+    if(this.singleEditMode && pt){ pt.phaseOffset=v; }
+    else { this.engine.setPointPhaseOffset(v); }
+    this.animationManager.forceRender();
+  }
+  updateSelectedPoints(field,val){
+    const pt=this.getSelectedPoint();
+    if(this.singleEditMode && pt){ pt[field]=val; }
+    else { this.engine.getAllPoints().forEach(p=>p[field]=val); }
+    this.animationManager.forceRender();
+  }
+  toggleColorMode(){
+    const el=document.getElementById('colorToggle'); el.classList.toggle('active');
+    const on=el.classList.contains('active');
+    this.engine.setColorMode(on);
+    document.getElementById('colorControls').style.display= on?'':'none';
+    document.getElementById('colorControls2').style.display= on?'':'none';
+    document.getElementById('colorPreview').style.display= on?'':'none';
+    this.updateGradient(); this.animationManager.forceRender();
+  }
+  updateGradient(){
+    const gp=document.getElementById('gradientPreview');
+    if(gp) gp.style.background=`linear-gradient(to right,hsl(${this.engine.hue1},70%,50%), hsl(${this.engine.hue2},70%,50%))`;
+    this.updatePerformanceInfo();
+  }
+  updatePerformanceInfo(){
+    const info=this.renderer.getPerformanceInfo();
+    const el=document.getElementById('performanceInfo');
+    if(el && this.engine.points.size>0) el.textContent = `${info.resolution} • ${this.animationManager.fps} FPS`;
+  }
+  setSingleEditMode(v){ this.singleEditMode=v; this.updatePointPropertiesUI(); }
+  clearAll(){ this.engine.clearAll(); this.clearSelection(); this.animationManager.forceRender(); this.updatePointsUI(); }
+  syncPoints(){ this.engine.syncPoints(); this.animationManager.forceRender(); }
+  removePoint(id){ if(this.selectedPointId===id) this.selectedPointId=null; this.engine.removePoint(id); this.animationManager.setSelectedPoint(null); if(this.engine.points.size===0) this.animationManager.stop(); this.updatePointsUI(); this.updatePointPropertiesUI(); }
+  clonePoint(){
+    const pt=this.getSelectedPoint(); if(!pt) return;
+    const np=this.engine.addPoint(pt.x+12, pt.y+12, { amplitude:pt.amplitude, wavelength:pt.wavelength, speed:pt.speed, waveType:pt.waveType, phaseOffset:pt.phaseOffset });
+    if(np){ this.selectPoint(np.id); this.animationManager.forceRender(); this.updatePointsUI(); }
+  }
+  deletePoint(){ const pt=this.getSelectedPoint(); if(!pt) return; this.removePoint(pt.id); this.animationManager.forceRender(); }
+  createRandomPoint(){
+    const w=window.innerWidth,h=window.innerHeight;
+    const x=30+Math.random()*(w-60), y=30+Math.random()*(h-60);
+    const p=this.engine.addPoint(x,y,{});
+    if(p && !this.animationManager.isAnimating && this.engine.points.size>0) this.animationManager.start();
+    this.updatePointsUI();
+  }
+  generatePattern(){
+    const type=document.getElementById('patternType').value;
+    const count=parseInt(document.getElementById('patternCount').value,10);
+    const scale=parseFloat(document.getElementById('patternScale').value);
+    const current=this.engine.points.size;
+    const slots=CONFIG.maxPoints-current; if(slots<=0){ Utils.haptic(); return; }
+    const actual=Math.min(count,slots);
+    const bounds={width:window.innerWidth,height:window.innerHeight};
+    const positions=PatternGenerator.generate(type,actual,bounds,scale);
+    let first=null;
+    positions.forEach((pos,idx)=>{
+      let fx=pos.x, fy=pos.y;
+      if(this.animationManager.showGrid){ const gs=this.renderer.skipFactor*10; const s=Utils.snapToGrid(pos.x,pos.y,gs); fx=s.x; fy=s.y; }
+      const p=this.engine.addPoint(fx,fy,{});
+      if(idx===0) first=p;
+    });
+    if(first){ this.selectPoint(first.id); }
+    if(!this.animationManager.isAnimating && this.engine.points.size>0) this.animationManager.start();
+    this.animationManager.forceRender();
+    this.updatePointsUI();
+  }
+}
+
+/* =========================== Interaction Manager ================== */
+/* Drag, long-press add, double-tap clone, delete zones. 7 */
+class InteractionManager{
+  constructor(canvas,ui){
+    this.canvas=canvas; this.ui=ui;
+    this.isDragging=false; this.dragPoint=null; this.startPos={x:0,y:0};
+    this.longPressTimer=null; this.isLongPressing=false;
+    this.inDeletionZone=false; this.deletionTimer=null; this.deletionDuration=500;
+    this.lastTapTime=0; this.lastTapPos={x:0,y:0}; this.doubleTapWindow=300; this.doubleTapTolerance=10;
+    this.indicator=document.getElementById('longPressIndicator');
+    this.deletionZones={ top:document.getElementById('deletionTop'), bottom:document.getElementById('deletionBottom'),
+                         left:document.getElementById('deletionLeft'), right:document.getElementById('deletionRight') };
+    this.setupEvents();
+  }
+  setupEvents(){
+    const opts={passive:false};
+    this.canvas.addEventListener('touchstart',e=>this.handleStart(e,e.touches[0]),opts);
+    this.canvas.addEventListener('touchmove',e=>this.handleMove(e,e.touches[0]),opts);
+    this.canvas.addEventListener('touchend',e=>this.handleEnd(e),opts);
+    this.canvas.addEventListener('mousedown',e=>this.handleStart(e,e),opts);
+    this.canvas.addEventListener('mousemove',e=>this.handleMove(e,e),opts);
+    this.canvas.addEventListener('mouseup',e=>this.handleEnd(e),opts);
+    this.canvas.addEventListener('contextmenu',e=>e.preventDefault());
+  }
+  getCoordinates(pointer){
+    const r=this.canvas.getBoundingClientRect();
+    const sx=this.canvas.width/r.width, sy=this.canvas.height/r.height;
+    return { x:Math.floor((pointer.clientX-r.left)*sx), y:Math.floor((pointer.clientY-r.top)*sy) };
+  }
+  handleStart(ev,pointer){
+    ev.preventDefault();
+    const c=this.getCoordinates(pointer); this.startPos=c;
+    const hit=this.ui.engine.findPointAt(c.x,c.y);
+    const now=performance.now();
+    if(hit && this.isDoubleTap(c,now)){ this.handleDoubleTap(hit,c); return; }
+    if(hit){ this.ui.selectPoint(hit.id); this.dragPoint=hit; this.isDragging=true; return; }
+    this.startLongPress(c);
+  }
+  handleMove(ev,pointer){
+    if(!this.isDragging && !this.isLongPressing){ return; }
+    ev.preventDefault();
+    const c=this.getCoordinates(pointer);
+    if(this.isDragging && this.dragPoint){
+      this.dragPoint.x=c.x; this.dragPoint.y=c.y;
+      const inZone = c.y<64 || c.y>this.canvas.height-64 || c.x<64 || c.x>this.canvas.width-64;
+      this.dragPoint.inDeletionZone = inZone; this.inDeletionZone=inZone;
+      this.updateDeletionZoneVisuals(inZone);
+      if(inZone) this.startDeletionTimer(); else this.cancelDeletionTimer();
+      this.ui.animationManager.forceRender();
+    }
+  }
+  handleEnd(ev){
+    ev.preventDefault();
+    if(this.longPressTimer){ clearTimeout(this.longPressTimer); this.longPressTimer=null; this.indicator.classList.remove('active'); }
+    if(this.isDragging){ this.isDragging=false; if(this.dragPoint){ this.dragPoint.inDeletionZone=false; this.dragPoint.deletionTimer=null; } this.updateDeletionZoneVisuals(false); }
+    this.cancelDeletionTimer();
+  }
+  startLongPress(coords){
+    const ind=this.indicator; ind.style.left=`${coords.x}px`; ind.style.top=`${coords.y}px`; ind.classList.add('active');
+    this.longPressTimer=setTimeout(()=>{
+      this.isLongPressing=true; Utils.haptic();
+      const p=this.ui.engine.addPoint(coords.x,coords.y,{});
+      if(p && !this.ui.animationManager.isAnimating && this.ui.engine.points.size>0) this.ui.animationManager.start();
+      this.ui.updatePointsUI(); ind.classList.remove('active'); ind.classList.add('complete');
+      setTimeout(()=>ind.classList.remove('complete'),200);
+      this.ui.selectPoint(p?.id);
+    }, CONFIG.longPressDuration);
+  }
+  updateDeletionZoneVisuals(active){
+    Object.values(this.deletionZones).forEach(z=>{ if(z) z.classList.toggle('active',active); });
+  }
+  startDeletionTimer(){
+    if(this.deletionTimer) return;
+    this.deletionTimer=setTimeout(()=>{
+      if(this.dragPoint && this.isDragging){
+        Utils.haptic(); this.ui.removePoint(this.dragPoint.id);
+        this.isDragging=false; this.dragPoint=null; this.updateDeletionZoneVisuals(false); this.inDeletionZone=false;
+      }
+      this.deletionTimer=null;
+    }, this.deletionDuration);
+    if(this.dragPoint){ this.dragPoint.deletionTimer=performance.now(); }
+  }
+  cancelDeletionTimer(){ if(this.deletionTimer){ clearTimeout(this.deletionTimer); this.deletionTimer=null; } if(this.dragPoint){ this.dragPoint.deletionTimer=null; } }
+  isDoubleTap(c,t){ const dt=t-this.lastTapTime; const d=Utils.distance(c.x,c.y,this.lastTapPos.x,this.lastTapPos.y); return dt<this.doubleTapWindow && d<this.doubleTapTolerance; }
+  handleDoubleTap(p,c){ Utils.haptic(); this.ui.selectPoint(p.id); this.ui.clonePoint(); Utils.showVisual(c.x,c.y,'clone-flash'); this.lastTapTime=0; this.lastTapPos={x:0,y:0}; }
+}
+
+/* ============================== App ================================ */
+class WaveSimulation{
+  constructor(){
+    this.canvas=document.getElementById('canvas');
+    this.engine=new WaveEngine();            // real physics
+    this.renderer=new Renderer(this.canvas); // real renderer
+    this.animationManager=new AnimationManager(this.renderer,this.engine);
+    this.uiController=new UIController(this.engine,this.animationManager,this.renderer);
+    this.interactionManager=new InteractionManager(this.canvas,this.uiController);
+    window.app=this;
+  }
+}
+
+/* ============================ Bootstrap ============================ */
+document.addEventListener('DOMContentLoaded',()=>{
+  try{ new WaveSimulation(); }
+  catch(err){
+    console.error('Failed to initialize:',err);
+    document.body.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:white;text-align:center;font-family:monospace">
+      <div><h2>Wave Simulation Error</h2><p>Failed to initialize bottom sheet interface</p><p style="font-size:12px;opacity:.7">Check console for details</p></div>
+    </div>`;
+  }
+});
 </script>
 </body>
 </html>
